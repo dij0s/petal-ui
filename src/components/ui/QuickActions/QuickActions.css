@@ -4,7 +4,7 @@
     position: absolute;
     top: 20px;
     right: 20px;
-    width: 60px;
+    width: 100px;
     color: var(--background-color-action-85-opacity);
 }
 
@@ -12,6 +12,21 @@
     cursor: pointer;
 }
 
-.quick-actions-language {
+.quick-actions-languages {
+    display: flex;
+    justify-content: space-between;
+    width: 60px;
     font-size: 0.875rem;
+}
+
+.quick-actions-language:hover {
+    cursor: pointer;
+}
+
+.quick-actions-language {
+    transition: color 0.2s;
+}
+
+.quick-actions-language[data-active="true"] {
+    color: var(--background-color-action-30-opacity);
 }

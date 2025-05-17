@@ -2,6 +2,7 @@ import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowUp } from "@fortawesome/free-solid-svg-icons";
 import { pelletConfig, type Indicator } from "../../../utils/feedbackPellet";
+import { useTranslation } from "react-i18next";
 import "./Prompt.css";
 
 interface PromptProps {
@@ -10,13 +11,14 @@ interface PromptProps {
 
 const Prompt = ({ indicator = "great" }: PromptProps) => {
   const [promptInput, setPromptInput] = useState<string>("");
-  const { color, label } = pelletConfig[indicator];
+  const { color, translationKey } = pelletConfig[indicator];
+  const { t } = useTranslation();
 
   return (
     <div className="prompt-wrapper">
       <div className="prompt-wrapper-inner">
         <textarea
-          placeholder="Type your message here..."
+          placeholder={t("prompt_placeholder")}
           value={promptInput}
           onChange={(e) => setPromptInput(e.target.value)}
         />
@@ -26,7 +28,7 @@ const Prompt = ({ indicator = "great" }: PromptProps) => {
               className="prompt-feedback-pastel"
               style={{ backgroundColor: color }}
             ></div>
-            <span className="prompt-feedback-label">{label}</span>
+            <span className="prompt-feedback-label">{t(translationKey)}</span>
           </div>
           <div
             className="prompt-action-wrapper"

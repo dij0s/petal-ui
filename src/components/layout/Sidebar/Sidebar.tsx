@@ -1,5 +1,6 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTableColumns, faPlus } from "@fortawesome/free-solid-svg-icons";
+import { useTranslation } from "react-i18next";
 import "./Sidebar.css";
 
 interface SidebarProps {
@@ -8,6 +9,7 @@ interface SidebarProps {
 }
 
 const Sidebar = ({ sidebarState, setSidebarState }: SidebarProps) => {
+  const { t } = useTranslation();
   const isCollapsed = sidebarState === "collapsed";
 
   // expand panel container
@@ -22,7 +24,7 @@ const Sidebar = ({ sidebarState, setSidebarState }: SidebarProps) => {
         />
       </div>
       <span className="panel-actions-label">
-        {isCollapsed ? "" : "Close side panel"}
+        {isCollapsed ? "" : t("side_panel_close_label")}
       </span>
     </div>
   );
@@ -37,7 +39,7 @@ const Sidebar = ({ sidebarState, setSidebarState }: SidebarProps) => {
         />
       </div>
       <span className="panel-actions-label">
-        {isCollapsed ? "" : "New conversation"}
+        {isCollapsed ? "" : t("side_panel_new_conversation_label")}
       </span>
     </div>
   );

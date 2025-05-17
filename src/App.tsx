@@ -1,7 +1,7 @@
 import { useState } from "react";
 import Layout from "./components/layout";
 import Conversation from "./components/layout/Conversation";
-
+import "./i18n";
 import "./App.css";
 
 function App() {
