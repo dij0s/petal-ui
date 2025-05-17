@@ -22,9 +22,9 @@
     --background-color-chat-human: #122f29;
     --background-color-button-prompt: #007961;
     --text-color-chat-human: #f9f9f9;
-    --greenness-indicator-great: #007961;
-    --greenness-indicator-mid: #796100;
-    --greenness-indicator-bad: #79001e;
+    --background-color-indicator-great: #007961;
+    --background-color-indicator-ok: #796100;
+    --background-color-indicator-bad: #79001e;
 }
 
 [data-theme="dark"] {
