@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowUp } from "@fortawesome/free-solid-svg-icons";
 import { pelletConfig, type Indicator } from "../../../utils/feedbackPellet";
@@ -7,10 +6,15 @@ import "./Prompt.css";
 
 interface PromptProps {
   indicator?: Indicator;
+  promptInput: string;
+  setPromptInput: (value: string) => void;
 }
 
-const Prompt = ({ indicator = "great" }: PromptProps) => {
-  const [promptInput, setPromptInput] = useState<string>("");
+const Prompt = ({
+  indicator = "great",
+  promptInput,
+  setPromptInput,
+}: PromptProps) => {
   const { color, translationKey } = pelletConfig[indicator];
   const { t } = useTranslation();
 
@@ -18,6 +22,7 @@ const Prompt = ({ indicator = "great" }: PromptProps) => {
     <div className="prompt-wrapper">
       <div className="prompt-wrapper-inner">
         <textarea
+          className="prompt-textarea"
           placeholder={t("prompt_placeholder")}
           value={promptInput}
           onChange={(e) => setPromptInput(e.target.value)}
