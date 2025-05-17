@@ -64,9 +64,20 @@ textarea::placeholder {
     color: var(--background-color-prompt);
 }
 
+.prompt-feedback-wrapper {
+    display: flex;
+    align-items: center;
+}
+
 .prompt-feedback-pastel {
     width: 15px;
     height: 15px;
     border: 1px solid var(--border-color);
     border-radius: 8px;
+}
+
+.prompt-feedback-label {
+    margin-left: 20px;
+    color: var(--text-color-50-opacity);
+    font-size: 0.875rem;
 }
