@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import Sidebar from "./Sidebar";
 import Map from "./Map";
+import QuickActions from "../ui/QuickActions";
 import "./Layout.css";
 
 interface LayoutProps {
@@ -27,6 +28,7 @@ const Layout = ({
       <Sidebar sidebarState={sidebarState} setSidebarState={setSidebarState} />
       <div className="main-wrapper">{children}</div>
       {mapState === "visible" && <Map />}
+      <QuickActions />
     </div>
   );
 };

@@ -57,7 +57,7 @@ textarea::placeholder {
 
 .prompt-action-wrapper[data-active="true"] {
     background-color: var(--background-color-action-active);
-    border-radius: 0 15px 15px 15px;
+    border-radius: 2px 15px 15px 15px;
 }
 
 .prompt-action-wrapper > svg {
