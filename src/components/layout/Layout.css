@@ -1,0 +1,14 @@
+.layout-wrapper {
+    display: grid;
+    grid-template-columns: auto 1fr 700px 1fr;
+    height: 100%;
+    background-color: var(--background-color);
+}
+
+.layout-wrapper[data-sidebar="expanded"] {
+    grid-template-columns: auto 1fr 700px 1fr;
+}
+
+.main-wrapper {
+    grid-column: 3;
+}
