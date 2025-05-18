@@ -12,13 +12,16 @@ interface LayoutProps {
   setMapState: (state: "hidden" | "visible") => void;
 }
 
-const Layout = ({
-  children,
-  sidebarState,
-  setSidebarState,
-  mapState,
-  setMapState,
-}: LayoutProps) => {
+const Layout = (
+  /* eslint-disable @typescript-eslint/no-unused-vars */
+  {
+    children,
+    sidebarState,
+    setSidebarState,
+    mapState,
+    setMapState: _setMapState,
+  }: LayoutProps,
+) => {
   return (
     <div
       className="layout-wrapper"
@@ -27,7 +30,7 @@ const Layout = ({
     >
       <Sidebar sidebarState={sidebarState} setSidebarState={setSidebarState} />
       <div className="main-wrapper">{children}</div>
-      {mapState === "visible" && <Map setMapState={setMapState} />}
+      {mapState === "visible" && <Map />}
       <QuickActions />
     </div>
   );

@@ -1,6 +1,6 @@
 .layout-wrapper {
     display: grid;
-    grid-template-columns: auto 1fr 700px 1fr;
+    grid-template-columns: auto 1fr 700px 1fr 900px;
     height: 100%;
     background-color: var(--background-color);
     transition:
@@ -9,7 +9,7 @@
         border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.layout-wrapper[data-sidebar="expanded"] {
+.layout-wrapper[data-map="hidden"] {
     grid-template-columns: auto 1fr 700px 1fr;
 }
 
