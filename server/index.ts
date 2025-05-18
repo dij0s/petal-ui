@@ -46,4 +46,4 @@ serve({
   },
   port: PORT,
 });
-console.log("[LOG] Serving frontend build");
+console.log(`[LOG] Serving frontend build on port ${PORT}`);
