@@ -8,7 +8,7 @@ function App() {
   const [sidebarState, setSidebarState] = useState<"collapsed" | "expanded">(
     "collapsed",
   );
-  const [mapState, setMapState] = useState<"hidden" | "visible">("visible");
+  const [mapState, setMapState] = useState<"hidden" | "visible">("hidden");
 
   return (
     <Layout
