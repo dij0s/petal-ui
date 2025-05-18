@@ -2,9 +2,8 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSun, faMoon } from "@fortawesome/free-solid-svg-icons";
 import { useTheme } from "../../../context/ThemeContext";
 import { useTranslation } from "react-i18next";
+import { SUPPORTED_LANGUAGES } from "../../../i18n";
 import "./QuickActions.css";
-
-const LANGUAGES = [{ code: "en" }, { code: "fr" }, { code: "de" }];
 
 const QuickActions = () => {
   const { theme, toggleTheme } = useTheme();
@@ -16,14 +15,14 @@ const QuickActions = () => {
         <FontAwesomeIcon icon={theme === "light" ? faMoon : faSun} />
       </div>
       <div className="quick-actions-languages">
-        {LANGUAGES.map((lang) => (
+        {SUPPORTED_LANGUAGES.map((lang) => (
           <div
-            key={lang.code}
+            key={lang}
             className="quick-actions-language"
-            data-active={i18n.language === lang.code ? "true" : "false"}
-            onClick={() => i18n.changeLanguage(lang.code)}
+            data-active={i18n.language === lang ? "true" : "false"}
+            onClick={() => i18n.changeLanguage(lang)}
           >
-            {lang.code}
+            {lang}
           </div>
         ))}
       </div>

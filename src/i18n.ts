@@ -1,7 +1,24 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 
-const defaultLanguage = localStorage.getItem("language") || "en";
+export const SUPPORTED_LANGUAGES = ["en", "fr", "de"];
+
+function detectLanguage() {
+  // get user prefered language
+  const stored = localStorage.getItem("language");
+  if (stored && SUPPORTED_LANGUAGES.includes(stored)) return stored;
+
+  const browserLang =
+    (navigator.languages && navigator.languages[0]) ||
+    navigator.language ||
+    "en";
+  const shortLang = browserLang.split("-")[0];
+  if (SUPPORTED_LANGUAGES.includes(shortLang)) return shortLang;
+
+  return "en";
+}
+
+const defaultLanguage = detectLanguage();
 
 i18n.use(initReactI18next).init({
   resources: {
