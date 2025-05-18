@@ -27,7 +27,7 @@ const Layout = ({
     >
       <Sidebar sidebarState={sidebarState} setSidebarState={setSidebarState} />
       <div className="main-wrapper">{children}</div>
-      {mapState === "visible" && <Map />}
+      {mapState === "visible" && <Map setMapState={setMapState} />}
       <QuickActions />
     </div>
   );
