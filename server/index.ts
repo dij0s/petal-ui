@@ -4,7 +4,10 @@ import { join } from "path";
 
 // @ts-expect-error: Bun extension, not in standard TS types
 const DIST_DIR = join(import.meta.dir, "../dist");
-const BACKEND_API_URL = "http://localhost:8000";
+
+// use env variables with fallback defaults
+const BACKEND_API_URL = process.env.BACKEND_API_URL || "http://localhost:8000";
+const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
 
 serve({
   async fetch(req) {
@@ -41,6 +44,6 @@ serve({
       return new Response("Not found", { status: 404 });
     }
   },
-  port: 3000,
+  port: PORT,
 });
 console.log("[LOG] Serving frontend build");
