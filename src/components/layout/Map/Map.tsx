@@ -1,7 +1,8 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import Map from "ol/Map";
 import View from "ol/View";
 import TileLayer from "ol/layer/Tile";
+import LayerGroup from "ol/layer/Group";
 import WMTS from "ol/source/WMTS";
 import TileGrid from "ol/tilegrid/WMTS";
 import { defaults as defaultControls, ScaleLine } from "ol/control";
@@ -25,8 +26,8 @@ const LV95_RESOLUTIONS = [
 const LV95_ORIGIN = [2420000, 1350000];
 const LV95_MATRIX_IDS = LV95_RESOLUTIONS.map((_, idx) => idx.toString());
 
-// WMTS background layer
-const baseMapWMTS = new TileLayer({
+// WMTS background base layers
+const swissImageBaseLayer = new TileLayer({
   source: new WMTS({
     url: "https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.swissimage-product/default/current/2056/{TileMatrix}/{TileCol}/{TileRow}.jpeg",
     layer: "ch.swisstopo.swissimage-product",
@@ -45,10 +46,38 @@ const baseMapWMTS = new TileLayer({
   }),
 });
 
+const pixelkarteFarbeBaseLayer = new TileLayer({
+  source: new WMTS({
+    url: "https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/2056/{TileMatrix}/{TileCol}/{TileRow}.jpeg",
+    layer: "ch.swisstopo.pixelkarte-farbe",
+    matrixSet: "2056",
+    format: "image/jpeg",
+    projection: "EPSG:2056",
+    tileGrid: new TileGrid({
+      origin: LV95_ORIGIN,
+      resolutions: LV95_RESOLUTIONS,
+      matrixIds: LV95_MATRIX_IDS,
+      tileSize: 256,
+    }),
+    style: "default",
+    requestEncoding: "REST",
+    attributions: "© swisstopo",
+  }),
+});
+
+const baseLayerGroup = new LayerGroup({
+  layers: [swissImageBaseLayer, pixelkarteFarbeBaseLayer],
+});
+
 const MapComponent = () => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapObj = useRef<Map | null>(null);
 
+  const [baseLayer, setBaseLayer] = useState<"swissimage" | "pixelkarte">(
+    "swissimage",
+  );
+
+  // create and dispose map
   useEffect(() => {
     const view = new View({
       projection: "EPSG:2056",
@@ -61,7 +90,7 @@ const MapComponent = () => {
     const map = new Map({
       target: mapRef.current as HTMLDivElement,
       controls: defaultControls().extend([new ScaleLine({ units: "metric" })]),
-      layers: [baseMapWMTS],
+      layers: [baseLayerGroup],
       view: view,
     });
 
@@ -72,6 +101,12 @@ const MapComponent = () => {
       mapObj.current = null;
     };
   }, []);
+
+  // handle base layer control
+  useEffect(() => {
+    swissImageBaseLayer.setVisible(baseLayer === "swissimage");
+    pixelkarteFarbeBaseLayer.setVisible(baseLayer === "pixelkarte");
+  }, [baseLayer]);
 
   return <div className="map-wrapper" ref={mapRef} />;
 };
