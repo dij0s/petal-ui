@@ -1,0 +1,31 @@
+.chat-wrapper[data-source="user"] {
+    display: flex;
+    justify-content: end;
+    line-height: 1rem;
+    padding-bottom: 10px;
+}
+
+.chat-wrapper[data-source="assistant"] {
+    line-height: 1.25rem;
+    padding-bottom: 20px;
+}
+
+.chat {
+    font-size: 1rem;
+}
+
+.chat-wrapper[data-source="user"] > .chat {
+    max-width: 500px;
+    background-color: var(--background-color-chat-human);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    padding: 20px;
+    color: var(--text-color-chat-human);
+    word-break: break-word;
+    overflow-wrap: break-word;
+    white-space: pre-line;
+}
+
+.chat-wrapper[data-source="assistant"] > .chat {
+    color: var(--text-color);
+}

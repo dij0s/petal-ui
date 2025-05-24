@@ -10,6 +10,7 @@ const BACKEND_API_URL = process.env.BACKEND_API_URL || "http://localhost:8000";
 const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
 
 serve({
+  idleTimeout: 120,
   async fetch(req) {
     const url = new URL(req.url);
 

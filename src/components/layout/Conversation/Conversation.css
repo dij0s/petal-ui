@@ -59,3 +59,12 @@ main {
     cursor: pointer;
     background-color: var(--background-color-prompt);
 }
+
+.conversation-messages-wrapper {
+    display: flex;
+    flex-direction: column;
+}
+
+.conversation-messages-wrapper > .chat-wrapper:first-of-type {
+    padding-top: 20px;
+}

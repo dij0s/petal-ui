@@ -9,6 +9,7 @@ interface PromptProps {
   promptInput: string;
   setPromptInput: (value: string) => void;
   onSend: (prompt: string) => void;
+  disabled?: boolean;
 }
 
 const Prompt = ({
@@ -16,6 +17,7 @@ const Prompt = ({
   promptInput,
   setPromptInput,
   onSend,
+  disabled = false,
 }: PromptProps) => {
   const { color, translationKey } = pelletConfig[indicator];
   const { t } = useTranslation();
@@ -34,6 +36,7 @@ const Prompt = ({
               onSend(promptInput);
             }
           }}
+          disabled={disabled}
         />
         <div className="prompt-actions-wrapper">
           <div className="prompt-feedback-wrapper">

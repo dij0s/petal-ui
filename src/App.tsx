@@ -1,13 +1,9 @@
 import { useState, useRef } from "react";
 import Layout from "./components/layout";
 import Conversation from "./components/layout/Conversation";
+import type { Message } from "./types/Message";
 import "./i18n";
 import "./App.css";
-
-type Message = {
-  role: "user" | "assistant";
-  content: string;
-};
 
 function App() {
   const [sidebarState, setSidebarState] = useState<"collapsed" | "expanded">(
@@ -15,6 +11,7 @@ function App() {
   );
 
   const [messages, setMessages] = useState<Message[]>([]);
+  const [isStreaming, setIsStreaming] = useState<boolean>(false);
 
   const [mapState, setMapState] = useState<"hidden" | "visible">("hidden");
 
@@ -37,6 +34,7 @@ function App() {
     if (eventSourceRef.current) eventSourceRef.current.close();
     const es = new EventSource(`/api/stream?user_id=${USER_ID}`);
 
+    setIsStreaming(true);
     let assistantMsg = "";
     es.addEventListener("token", (e) => {
       assistantMsg += e.data;
@@ -52,7 +50,10 @@ function App() {
       });
     });
 
-    es.addEventListener("end", () => es.close());
+    es.addEventListener("end", () => {
+      es.close();
+      setIsStreaming(false);
+    });
     eventSourceRef.current = es;
   };
 
@@ -63,7 +64,11 @@ function App() {
       setMapState={setMapState}
       mapState={mapState}
     >
-      <Conversation messages={messages} onSendPrompt={handleSendPrompt} />
+      <Conversation
+        messages={messages}
+        onSendPrompt={handleSendPrompt}
+        isStreaming={isStreaming}
+      />
     </Layout>
   );
 }
