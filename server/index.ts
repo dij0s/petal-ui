@@ -42,6 +42,7 @@ serve({
         headers: req.headers,
         body: req.body,
       });
+      console.log(apiReq)
       const apiRes = await fetch(apiReq);
       return new Response(apiRes.body, {
         status: apiRes.status,
