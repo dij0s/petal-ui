@@ -73,7 +73,8 @@ const MapComponent = () => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapObj = useRef<Map | null>(null);
 
-  const [baseLayer, setBaseLayer] = useState<"swissimage" | "pixelkarte">(
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [baseLayer, _setBaseLayer] = useState<"swissimage" | "pixelkarte">(
     "swissimage",
   );
 

@@ -13,9 +13,29 @@ serve({
   async fetch(req) {
     const url = new URL(req.url);
 
+    // proxy API SSE streaming separately
+    if (url.pathname === "/api/stream") {
+      const apiUrl = BACKEND_API_URL + "/api/stream" + url.search;
+      const apiRes = await fetch(apiUrl, {
+        method: req.method,
+        headers: req.headers,
+      });
+
+      // set headers for streaming
+      const headers = new Headers(apiRes.headers);
+      headers.set("Content-Type", "text/event-stream");
+      headers.set("Cache-Control", "no-cache");
+      headers.set("Connection", "keep-alive");
+
+      return new Response(apiRes.body, {
+        status: apiRes.status,
+        headers,
+      });
+    }
+
     // proxy API requests to Python backend
     if (url.pathname.startsWith("/api/")) {
-      const apiUrl = BACKEND_API_URL + url.pathname.replace("/api", "");
+      const apiUrl = BACKEND_API_URL + url.pathname;
       const apiReq = new Request(apiUrl, {
         method: req.method,
         headers: req.headers,

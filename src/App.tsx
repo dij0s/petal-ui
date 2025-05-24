@@ -1,14 +1,60 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Layout from "./components/layout";
 import Conversation from "./components/layout/Conversation";
 import "./i18n";
 import "./App.css";
 
+type Message = {
+  role: "user" | "assistant";
+  content: string;
+};
+
 function App() {
   const [sidebarState, setSidebarState] = useState<"collapsed" | "expanded">(
     "collapsed",
   );
-  const [mapState, setMapState] = useState<"hidden" | "visible">("visible");
+
+  const [messages, setMessages] = useState<Message[]>([]);
+
+  const [mapState, setMapState] = useState<"hidden" | "visible">("hidden");
+
+  const eventSourceRef = useRef<EventSource | null>(null);
+  const USER_ID = "1";
+
+  const handleSendPrompt = async (prompt: string) => {
+    setMessages((msgs) => [...msgs, { role: "user", content: prompt }]);
+    // send prompt to backend
+    const response = await fetch("/api/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user_id: USER_ID, prompt }),
+    });
+    if (response.status !== 200) {
+      return;
+    }
+
+    // start streaming
+    if (eventSourceRef.current) eventSourceRef.current.close();
+    const es = new EventSource(`/api/stream?user_id=${USER_ID}`);
+
+    let assistantMsg = "";
+    es.addEventListener("token", (e) => {
+      assistantMsg += e.data;
+      setMessages((msgs) => {
+        if (msgs[msgs.length - 1]?.role === "assistant") {
+          return [
+            ...msgs.slice(0, -1),
+            { role: "assistant", content: assistantMsg },
+          ];
+        } else {
+          return [...msgs, { role: "assistant", content: assistantMsg }];
+        }
+      });
+    });
+
+    es.addEventListener("end", () => es.close());
+    eventSourceRef.current = es;
+  };
 
   return (
     <Layout
@@ -17,7 +63,7 @@ function App() {
       setMapState={setMapState}
       mapState={mapState}
     >
-      <Conversation />
+      <Conversation messages={messages} onSendPrompt={handleSendPrompt} />
     </Layout>
   );
 }

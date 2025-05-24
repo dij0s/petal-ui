@@ -8,12 +8,14 @@ interface PromptProps {
   indicator?: Indicator;
   promptInput: string;
   setPromptInput: (value: string) => void;
+  onSend: (prompt: string) => void;
 }
 
 const Prompt = ({
   indicator = "great",
   promptInput,
   setPromptInput,
+  onSend,
 }: PromptProps) => {
   const { color, translationKey } = pelletConfig[indicator];
   const { t } = useTranslation();
@@ -26,6 +28,12 @@ const Prompt = ({
           placeholder={t("prompt_placeholder")}
           value={promptInput}
           onChange={(e) => setPromptInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey && promptInput.trim() !== "") {
+              e.preventDefault();
+              onSend(promptInput);
+            }
+          }}
         />
         <div className="prompt-actions-wrapper">
           <div className="prompt-feedback-wrapper">
@@ -38,6 +46,9 @@ const Prompt = ({
           <div
             className="prompt-action-wrapper"
             data-active={promptInput.replace(/\s+/g, "") != ""}
+            onClick={() => {
+              if (promptInput.trim() !== "") onSend(promptInput);
+            }}
           >
             <FontAwesomeIcon icon={faArrowUp} />
           </div>

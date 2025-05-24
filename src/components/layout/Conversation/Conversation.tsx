@@ -3,7 +3,16 @@ import Prompt from "../../ui/Prompt";
 import { useTranslation } from "react-i18next";
 import "./Conversation.css";
 
-const Conversation = () => {
+type Message = { role: "user" | "assistant"; content: string };
+
+interface ConversationProps {
+  messages: Message[];
+  onSendPrompt: (prompt: string) => void;
+}
+
+const Conversation = ({ messages, onSendPrompt }: ConversationProps) => {
+  console.log(messages);
+
   const [promptInput, setPromptInput] = useState<string>("");
   const { t } = useTranslation();
 
@@ -39,7 +48,16 @@ const Conversation = () => {
           ))}
         </div>
       </div>
-      <Prompt promptInput={promptInput} setPromptInput={setPromptInput} />
+      <Prompt
+        promptInput={promptInput}
+        setPromptInput={setPromptInput}
+        onSend={(prompt) => {
+          if (prompt.trim() != "") {
+            onSendPrompt(prompt);
+            setPromptInput("");
+          }
+        }}
+      />
     </main>
   );
 };
