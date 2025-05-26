@@ -9,7 +9,7 @@ interface LayoutProps {
   sidebarState: "collapsed" | "expanded";
   setSidebarState: (state: "collapsed" | "expanded") => void;
   mapLayers: string[];
-  focusedBbox: number[];
+  focusedMunicipalitySFSO: number | null;
 }
 
 const Layout = ({
@@ -17,7 +17,7 @@ const Layout = ({
   sidebarState,
   setSidebarState,
   mapLayers,
-  focusedBbox,
+  focusedMunicipalitySFSO,
 }: LayoutProps) => {
   return (
     <div
@@ -28,7 +28,10 @@ const Layout = ({
       <Sidebar sidebarState={sidebarState} setSidebarState={setSidebarState} />
       <div className="main-wrapper">{children}</div>
       {mapLayers.length !== 0 && (
-        <Map mapLayers={mapLayers} focusedBbox={focusedBbox} />
+        <Map
+          mapLayers={mapLayers}
+          focusedMunicipalitySFSO={focusedMunicipalitySFSO}
+        />
       )}
       <QuickActions />
     </div>

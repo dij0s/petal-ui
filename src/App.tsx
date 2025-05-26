@@ -17,7 +17,9 @@ function App() {
   const [toolCalls, _setToolCalls] = useState<string[]>([]);
 
   const [mapLayers, setMapLayers] = useState<string[]>([]);
-  const [mapFocusedBbox, setMapFocusedBbox] = useState<number[]>([]);
+  const [mapFocusedMunicipality, setMapFocusedMunicipality] = useState<
+    number | null
+  >(null);
 
   const eventSourceRef = useRef<EventSource | null>(null);
   const USER_ID = "1";
@@ -67,9 +69,9 @@ function App() {
     });
 
     // handle focused geometry update
-    es.addEventListener("bbox", (e) => {
+    es.addEventListener("sfso_number", (e) => {
       const data = JSON.parse(e.data);
-      setMapFocusedBbox(data.bbox);
+      setMapFocusedMunicipality(Number(data.sfso_number));
     });
 
     // handle layers update
@@ -112,7 +114,7 @@ function App() {
       sidebarState={sidebarState}
       setSidebarState={setSidebarState}
       mapLayers={mapLayers}
-      focusedBbox={mapFocusedBbox}
+      focusedMunicipalitySFSO={mapFocusedMunicipality}
     >
       <Conversation
         messages={messages}

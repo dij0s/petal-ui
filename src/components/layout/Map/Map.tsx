@@ -8,6 +8,14 @@ import TileGrid from "ol/tilegrid/WMTS";
 import { defaults as defaultControls, ScaleLine } from "ol/control";
 import proj4 from "proj4";
 import { register } from "ol/proj/proj4";
+import VectorLayer from "ol/layer/Vector";
+import VectorSource from "ol/source/Vector";
+import Feature from "ol/Feature";
+import MultiPolygon from "ol/geom/MultiPolygon";
+import Polygon from "ol/geom/Polygon";
+import Style from "ol/style/Style";
+import Fill from "ol/style/Fill";
+import Stroke from "ol/style/Stroke";
 import "ol/ol.css";
 import "./Map.css";
 
@@ -18,7 +26,6 @@ proj4.defs(
 );
 register(proj4);
 
-// TileGrid parameters for LV95
 const LV95_RESOLUTIONS = [
   4000, 3750, 3500, 3250, 3000, 2750, 2500, 2250, 2000, 1750, 1500, 1250, 1000,
   750, 650, 500, 250, 100, 50, 20, 10, 5, 2.5, 2, 1.5, 1, 0.5, 0.25, 0.1,
@@ -26,7 +33,6 @@ const LV95_RESOLUTIONS = [
 const LV95_ORIGIN = [2420000, 1350000];
 const LV95_MATRIX_IDS = LV95_RESOLUTIONS.map((_, idx) => idx.toString());
 
-// WMTS background base layers
 const swissImageBaseLayer = new TileLayer({
   source: new WMTS({
     url: "https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.swissimage-product/default/current/2056/{TileMatrix}/{TileCol}/{TileRow}.jpeg",
@@ -71,10 +77,17 @@ const baseLayerGroup = new LayerGroup({
 
 interface MapProps {
   mapLayers: string[];
-  focusedBbox: number[];
+  focusedMunicipalitySFSO: number | null;
 }
 
-const MapComponent = ({ mapLayers, focusedBbox }: MapProps) => {
+const fetchMunicipalityGeoJSON = async (sfso: number) => {
+  const url = `https://api3.geo.admin.ch/rest/services/api/MapServer/ch.swisstopo.swissboundaries3d-gemeinde-flaeche.fill/${sfso}?returnGeometry=true&sr=2056&geometryFormat=geojson`;
+  const response = await fetch(url);
+  const data = await response.json();
+  return data.feature;
+};
+
+const MapComponent = ({ mapLayers, focusedMunicipalitySFSO }: MapProps) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapObj = useRef<Map | null>(null);
 
@@ -109,25 +122,18 @@ const MapComponent = ({ mapLayers, focusedBbox }: MapProps) => {
   }, []);
 
   useEffect(() => {
-    if (!mapObj.current || !focusedBbox) return;
-    const view = mapObj.current.getView();
-    // update the extent restriction
-    view.setProperties({ focusedBbox });
-    view.fit(focusedBbox, { size: mapObj.current.getSize(), duration: 500 });
-  }, [focusedBbox]);
-
-  useEffect(() => {
     if (!mapObj.current) return;
-
-    // keep baseLayerGroup always present
-    // and remove all non-base layers
-    // that are not in mapLayers
     const layers = mapObj.current.getLayers();
+    // remove all non-base layers
+    // that are not in mapLayers
     layers
       .getArray()
       .filter(
         (layer) =>
-          layer !== baseLayerGroup && !mapLayers.includes(layer.get("name")),
+          layer !== baseLayerGroup &&
+          layer.get("name") !== "municipality" &&
+          layer.get("name") !== "mask" &&
+          !mapLayers.includes(layer.get("name")),
       )
       .forEach((layer) => layers.remove(layer));
 
@@ -161,6 +167,79 @@ const MapComponent = ({ mapLayers, focusedBbox }: MapProps) => {
       }
     });
   }, [mapLayers]);
+
+  // mask around the municipality
+  useEffect(() => {
+    if (!mapObj.current) return;
+    const layers = mapObj.current.getLayers();
+
+    // remove previous municipality
+    // and mask layers
+    layers
+      .getArray()
+      .filter(
+        (layer) =>
+          layer.get("name") === "municipality" || layer.get("name") === "mask",
+      )
+      .forEach((layer) => layers.remove(layer));
+
+    if (!focusedMunicipalitySFSO) return;
+
+    fetchMunicipalityGeoJSON(focusedMunicipalitySFSO).then((feature) => {
+      const municipalityFeature = new Feature({
+        geometry: new MultiPolygon(feature.geometry.coordinates),
+      });
+
+      const municipalityLayer = new VectorLayer({
+        source: new VectorSource({ features: [municipalityFeature] }),
+        style: new Style({
+          stroke: new Stroke({ color: "#ff0000", width: 2 }),
+          fill: new Fill({ color: "rgba(255,255,255,0.1)" }),
+        }),
+      });
+      municipalityLayer.set("name", "municipality");
+      layers.push(municipalityLayer);
+
+      // mask layer
+      const worldExtent = [
+        2420000,
+        1030000, // minX, minY (covers Switzerland)
+        2900000,
+        1350000, // maxX, maxY
+      ];
+      const maskCoords = [
+        [
+          [worldExtent[0], worldExtent[1]],
+          [worldExtent[0], worldExtent[3]],
+          [worldExtent[2], worldExtent[3]],
+          [worldExtent[2], worldExtent[1]],
+          [worldExtent[0], worldExtent[1]],
+        ],
+      ];
+      // use all outer rings as holes
+      const holes = feature.geometry.coordinates.map(
+        (poly: number[][][]) => poly[0],
+      );
+      const maskPolygon = new Polygon([maskCoords[0], ...holes]);
+      const maskFeature = new Feature(maskPolygon);
+
+      const maskLayer = new VectorLayer({
+        source: new VectorSource({ features: [maskFeature] }),
+        style: new Style({
+          fill: new Fill({ color: "rgba(0,0,0,0.5)" }),
+        }),
+      });
+      maskLayer.set("name", "mask");
+      layers.push(maskLayer);
+
+      // fit view to bbox
+      if (mapObj.current && feature.bbox) {
+        mapObj.current
+          .getView()
+          .fit(feature.bbox, { size: mapObj.current.getSize(), duration: 500 });
+      }
+    });
+  }, [focusedMunicipalitySFSO]);
 
   // handle base layer control
   useEffect(() => {
