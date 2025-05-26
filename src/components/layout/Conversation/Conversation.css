@@ -71,12 +71,12 @@ main {
     padding-top: 20px;
 }
 
-.conversation-processing-status {
+.conversation-status {
     display: flex;
-    flex-direction: column;
-    color: var(--text-color-50-opacity);
+    flex-direction: row;
+    align-items: center;
 }
 
-.conversation-tool-call {
-    font-size: 0.625rem;
+.conversation-processing-status {
+    color: var(--text-color-50-opacity);
 }

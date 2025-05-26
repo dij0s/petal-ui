@@ -13,9 +13,11 @@ function App() {
   const [isStreaming, setIsStreaming] = useState<boolean>(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [processingStatus, setProcessingStatus] = useState<string>("");
-  const [toolCalls, setToolCalls] = useState<string[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [toolCalls, _setToolCalls] = useState<string[]>([]);
 
-  const [mapState, setMapState] = useState<"hidden" | "visible">("hidden");
+  const [mapLayers, setMapLayers] = useState<string[]>([]);
+  const [mapFocusedBbox, setMapFocusedBbox] = useState<number[]>([]);
 
   const eventSourceRef = useRef<EventSource | null>(null);
   const USER_ID = "1";
@@ -64,27 +66,39 @@ function App() {
       setProcessingStatus(data.content);
     });
 
-    // handle tool call updates
-    es.addEventListener("tool_call", (e) => {
-      try {
-        const data = JSON.parse(e.data);
-        setToolCalls((prev) => {
-          if (data.isFinished) {
-            // remove the tool name if finished
-            return prev.filter((name) => name !== data.name);
-          } else {
-            // add the tool name if
-            // not already present
-            if (!prev.includes(data.name)) {
-              return [...prev, data.name];
-            }
-            return prev;
-          }
-        });
-      } catch (err) {
-        console.error("Invalid tool_call event data", err);
-      }
+    // handle focused geometry update
+    es.addEventListener("bbox", (e) => {
+      const data = JSON.parse(e.data);
+      setMapFocusedBbox(data.bbox);
     });
+
+    // handle layers update
+    es.addEventListener("layers", (e) => {
+      const data = JSON.parse(e.data);
+      setMapLayers(data.layers);
+    });
+
+    // handle tool call updates
+    // es.addEventListener("tool_call", (e) => {
+    //   try {
+    //     const data = JSON.parse(e.data);
+    //     setToolCalls((prev) => {
+    //       if (data.isFinished) {
+    //         // remove the tool name if finished
+    //         return prev.filter((name) => name !== data.name);
+    //       } else {
+    //         // add the tool name if
+    //         // not already present
+    //         if (!prev.includes(data.name)) {
+    //           return [...prev, data.name];
+    //         }
+    //         return prev;
+    //       }
+    //     });
+    //   } catch (err) {
+    //     console.error("Invalid tool_call event data", err);
+    //   }
+    // });
 
     es.addEventListener("end", () => {
       es.close();
@@ -97,8 +111,8 @@ function App() {
     <Layout
       sidebarState={sidebarState}
       setSidebarState={setSidebarState}
-      setMapState={setMapState}
-      mapState={mapState}
+      mapLayers={mapLayers}
+      focusedBbox={mapFocusedBbox}
     >
       <Conversation
         messages={messages}

@@ -8,29 +8,28 @@ interface LayoutProps {
   children: ReactNode;
   sidebarState: "collapsed" | "expanded";
   setSidebarState: (state: "collapsed" | "expanded") => void;
-  mapState: "hidden" | "visible";
-  setMapState: (state: "hidden" | "visible") => void;
+  mapLayers: string[];
+  focusedBbox: number[];
 }
 
-const Layout = (
-  /* eslint-disable @typescript-eslint/no-unused-vars */
-  {
-    children,
-    sidebarState,
-    setSidebarState,
-    mapState,
-    setMapState: _setMapState,
-  }: LayoutProps,
-) => {
+const Layout = ({
+  children,
+  sidebarState,
+  setSidebarState,
+  mapLayers,
+  focusedBbox,
+}: LayoutProps) => {
   return (
     <div
       className="layout-wrapper"
       data-sidebar={sidebarState}
-      data-map={mapState}
+      data-map={mapLayers.length === 0 ? "hidden" : "visible"}
     >
       <Sidebar sidebarState={sidebarState} setSidebarState={setSidebarState} />
       <div className="main-wrapper">{children}</div>
-      {mapState === "visible" && <Map />}
+      {mapLayers.length !== 0 && (
+        <Map mapLayers={mapLayers} focusedBbox={focusedBbox} />
+      )}
       <QuickActions />
     </div>
   );

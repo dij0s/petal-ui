@@ -2,8 +2,9 @@ import { useState } from "react";
 import Prompt from "../../ui/Prompt";
 import { useTranslation } from "react-i18next";
 import type { Message } from "../../../types/Message";
-import "./Conversation.css";
 import Chat from "../../ui/Chat";
+import loader from "../../../assets/loader.webp";
+import "./Conversation.css";
 
 interface ConversationProps {
   messages: Message[];
@@ -65,14 +66,16 @@ const Conversation = ({
           ))}
           {processingStatus !== "" && (
             <div className="conversation-status">
+              <div className="conversation-status-loader-wrapper">
+                <img
+                  src={loader}
+                  alt=""
+                  className="conversation-status-loader"
+                />
+              </div>
               <div className="conversation-processing-status">
                 {processingStatus}
               </div>
-              {/* {toolCalls.map((toolCall, index) => (
-                <div key={index} className="conversation-tool-call">
-                  Fetching {toolCall}
-                </div>
-              ))} */}
             </div>
           )}
         </div>
