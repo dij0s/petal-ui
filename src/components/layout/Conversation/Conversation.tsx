@@ -9,12 +9,17 @@ interface ConversationProps {
   messages: Message[];
   onSendPrompt: (prompt: string) => void;
   isStreaming: boolean;
+  processingStatus: string;
+  toolCalls: string[];
 }
 
 const Conversation = ({
   messages,
   onSendPrompt,
   isStreaming,
+  processingStatus,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  toolCalls: _toolCalls,
 }: ConversationProps) => {
   const [promptInput, setPromptInput] = useState<string>("");
   const { t } = useTranslation();
@@ -58,6 +63,18 @@ const Conversation = ({
           {messages.map((msg, index) => (
             <Chat key={index} message={msg} />
           ))}
+          {processingStatus !== "" && (
+            <div className="conversation-status">
+              <div className="conversation-processing-status">
+                {processingStatus}
+              </div>
+              {/* {toolCalls.map((toolCall, index) => (
+                <div key={index} className="conversation-tool-call">
+                  Fetching {toolCall}
+                </div>
+              ))} */}
+            </div>
+          )}
         </div>
       )}
       <Prompt

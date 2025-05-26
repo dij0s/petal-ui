@@ -63,8 +63,20 @@ main {
 .conversation-messages-wrapper {
     display: flex;
     flex-direction: column;
+    overflow-y: scroll;
+    scroll-behavior: smooth;
 }
 
 .conversation-messages-wrapper > .chat-wrapper:first-of-type {
     padding-top: 20px;
+}
+
+.conversation-processing-status {
+    display: flex;
+    flex-direction: column;
+    color: var(--text-color-50-opacity);
+}
+
+.conversation-tool-call {
+    font-size: 0.625rem;
 }

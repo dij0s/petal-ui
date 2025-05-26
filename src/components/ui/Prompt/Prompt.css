@@ -16,6 +16,12 @@
     grid-template-rows: 65% 10% 25%;
     width: 100%;
     padding: 20px 20px 10px 20px;
+    transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.prompt-wrapper-inner:has(textarea:disabled),
+.prompt-wrapper-inner:has(textarea[disabled]) {
+    opacity: 0.4;
 }
 
 textarea {

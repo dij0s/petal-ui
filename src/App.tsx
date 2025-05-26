@@ -10,8 +10,10 @@ function App() {
     "collapsed",
   );
 
-  const [messages, setMessages] = useState<Message[]>([]);
   const [isStreaming, setIsStreaming] = useState<boolean>(false);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [processingStatus, setProcessingStatus] = useState<string>("");
+  const [toolCalls, setToolCalls] = useState<string[]>([]);
 
   const [mapState, setMapState] = useState<"hidden" | "visible">("hidden");
 
@@ -36,7 +38,13 @@ function App() {
 
     setIsStreaming(true);
     let assistantMsg = "";
+
+    // handle incoming tokens
     es.addEventListener("token", (e) => {
+      // reset processing status
+      setProcessingStatus("");
+
+      // build message token by token
       assistantMsg += e.data;
       setMessages((msgs) => {
         if (msgs[msgs.length - 1]?.role === "assistant") {
@@ -48,6 +56,34 @@ function App() {
           return [...msgs, { role: "assistant", content: assistantMsg }];
         }
       });
+    });
+
+    // handle status updates
+    es.addEventListener("info", (e) => {
+      const data = JSON.parse(e.data);
+      setProcessingStatus(data.content);
+    });
+
+    // handle tool call updates
+    es.addEventListener("tool_call", (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        setToolCalls((prev) => {
+          if (data.isFinished) {
+            // remove the tool name if finished
+            return prev.filter((name) => name !== data.name);
+          } else {
+            // add the tool name if
+            // not already present
+            if (!prev.includes(data.name)) {
+              return [...prev, data.name];
+            }
+            return prev;
+          }
+        });
+      } catch (err) {
+        console.error("Invalid tool_call event data", err);
+      }
     });
 
     es.addEventListener("end", () => {
@@ -68,6 +104,8 @@ function App() {
         messages={messages}
         onSendPrompt={handleSendPrompt}
         isStreaming={isStreaming}
+        processingStatus={processingStatus}
+        toolCalls={toolCalls}
       />
     </Layout>
   );
