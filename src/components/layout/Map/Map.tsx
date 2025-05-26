@@ -110,45 +110,55 @@ const MapComponent = ({ mapLayers, focusedBbox }: MapProps) => {
 
   useEffect(() => {
     if (!mapObj.current || !focusedBbox) return;
-    // destructure individual coordinates
-    const [minX, minY, maxX, maxY] = focusedBbox;
-    const extent = [minX, minY, maxX, maxY];
-
-    // fit the view to the extent
-    mapObj.current
-      .getView()
-      .fit(extent, { size: mapObj.current.getSize(), duration: 500 });
-
-    mapObj.current.getInteractions().clear();
+    const view = mapObj.current.getView();
+    // update the extent restriction
+    view.setProperties({ focusedBbox });
+    view.fit(focusedBbox, { size: mapObj.current.getSize(), duration: 500 });
   }, [focusedBbox]);
 
   useEffect(() => {
     if (!mapObj.current) return;
 
-    // Remove all existing layers
-    mapObj.current.getLayers().clear();
+    // keep baseLayerGroup always present
+    // and remove all non-base layers
+    // that are not in mapLayers
+    const layers = mapObj.current.getLayers();
+    layers
+      .getArray()
+      .filter(
+        (layer) =>
+          layer !== baseLayerGroup && !mapLayers.includes(layer.get("name")),
+      )
+      .forEach((layer) => layers.remove(layer));
 
-    // Add a TileLayer for each WMTS URL
+    // add new layers that
+    // are not present
     mapLayers.forEach((layer_name) => {
-      const tileLayer = new TileLayer({
-        source: new WMTS({
-          url: `https://wmts.geo.admin.ch/1.0.0/${layer_name}/default/current/2056/{TileMatrix}/{TileCol}/{TileRow}.png`,
-          layer: layer_name,
-          matrixSet: "2056",
-          format: "image/png",
-          projection: "EPSG:2056",
-          tileGrid: new TileGrid({
-            origin: LV95_ORIGIN,
-            resolutions: LV95_RESOLUTIONS,
-            matrixIds: LV95_MATRIX_IDS,
-            tileSize: 256,
+      const alreadyPresent = layers
+        .getArray()
+        .some((layer) => layer.get("name") === layer_name);
+      if (!alreadyPresent) {
+        const tileLayer = new TileLayer({
+          source: new WMTS({
+            url: `https://wmts.geo.admin.ch/1.0.0/${layer_name}/default/current/2056/{TileMatrix}/{TileCol}/{TileRow}.png`,
+            layer: layer_name,
+            matrixSet: "2056",
+            format: "image/png",
+            projection: "EPSG:2056",
+            tileGrid: new TileGrid({
+              origin: LV95_ORIGIN,
+              resolutions: LV95_RESOLUTIONS,
+              matrixIds: LV95_MATRIX_IDS,
+              tileSize: 256,
+            }),
+            style: "default",
+            requestEncoding: "REST",
+            attributions: "© swisstopo",
           }),
-          style: "default",
-          requestEncoding: "REST",
-          attributions: "© swisstopo",
-        }),
-      });
-      mapObj.current?.addLayer(tileLayer);
+        });
+        tileLayer.set("name", layer_name);
+        layers.push(tileLayer);
+      }
     });
   }, [mapLayers]);
 
