@@ -1,4 +1,5 @@
 import { useRef, useEffect, useState } from "react";
+import MapControls from "../../ui/MapControls";
 import Map from "ol/Map";
 import View from "ol/View";
 import TileLayer from "ol/layer/Tile";
@@ -94,6 +95,18 @@ const MapComponent = ({ mapLayers, focusedMunicipalitySFSO }: MapProps) => {
     "swissimage",
   );
 
+  const handleToggle = (layerName: string) => {
+    if (!mapObj.current) return;
+    const layers = mapObj.current.getLayers();
+    // find layer and toggle visibility
+    const targetLayer = layers
+      .getArray()
+      .find((layer) => layer.get("name") === layerName);
+    if (targetLayer) {
+      targetLayer.setVisible(!targetLayer.getVisible());
+    }
+  };
+
   // create and dispose map
   useEffect(() => {
     const view = new View({
@@ -120,7 +133,6 @@ const MapComponent = ({ mapLayers, focusedMunicipalitySFSO }: MapProps) => {
   }, []);
 
   useEffect(() => {
-    console.log(mapLayers);
     if (!mapObj.current) return;
     const layers = mapObj.current.getLayers();
     // remove all non-base layers
@@ -162,6 +174,7 @@ const MapComponent = ({ mapLayers, focusedMunicipalitySFSO }: MapProps) => {
           }),
         });
         tileLayer.set("name", layer_name);
+        tileLayer.setOpacity(0.7);
         tileLayer.setZIndex(10 + index);
         layers.push(tileLayer);
       }
@@ -229,7 +242,11 @@ const MapComponent = ({ mapLayers, focusedMunicipalitySFSO }: MapProps) => {
     pixelkarteFarbeBaseLayer.setVisible(baseLayer === "pixelkarte");
   }, [baseLayer]);
 
-  return <div className="map-wrapper" ref={mapRef} />;
+  return (
+    <div className="map-wrapper" ref={mapRef}>
+      <MapControls mapLayers={mapLayers} handleToggle={handleToggle} />
+    </div>
+  );
 };
 
 export default MapComponent;
