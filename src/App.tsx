@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import Layout from "./components/layout";
 import Conversation from "./components/layout/Conversation";
+import { useTranslation } from "react-i18next";
 import type { Message } from "./types/Message";
 import "./i18n";
 import "./App.css";
@@ -24,13 +25,19 @@ function App() {
   const eventSourceRef = useRef<EventSource | null>(null);
   const USER_ID = "1";
 
+  const { i18n } = useTranslation();
+
   const handleSendPrompt = async (prompt: string) => {
     setMessages((msgs) => [...msgs, { role: "user", content: prompt }]);
     // send prompt to backend
     const response = await fetch("/api/send", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ user_id: USER_ID, prompt }),
+      body: JSON.stringify({
+        user_id: USER_ID,
+        prompt: prompt,
+        lang: i18n.language,
+      }),
     });
     if (response.status !== 200) {
       return;
@@ -47,7 +54,6 @@ function App() {
     es.addEventListener("token", (e) => {
       // reset processing status
       setProcessingStatus("");
-
       // build message token by token
       assistantMsg += e.data;
       setMessages((msgs) => {
@@ -80,28 +86,7 @@ function App() {
       setMapLayers(data.layers);
     });
 
-    // handle tool call updates
-    // es.addEventListener("tool_call", (e) => {
-    //   try {
-    //     const data = JSON.parse(e.data);
-    //     setToolCalls((prev) => {
-    //       if (data.isFinished) {
-    //         // remove the tool name if finished
-    //         return prev.filter((name) => name !== data.name);
-    //       } else {
-    //         // add the tool name if
-    //         // not already present
-    //         if (!prev.includes(data.name)) {
-    //           return [...prev, data.name];
-    //         }
-    //         return prev;
-    //       }
-    //     });
-    //   } catch (err) {
-    //     console.error("Invalid tool_call event data", err);
-    //   }
-    // });
-
+    // handle end event
     es.addEventListener("end", () => {
       es.close();
       setIsStreaming(false);

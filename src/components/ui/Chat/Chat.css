@@ -28,4 +28,5 @@
 
 .chat-wrapper[data-source="assistant"] > .chat {
     color: var(--text-color);
+    white-space: pre-line;
 }
