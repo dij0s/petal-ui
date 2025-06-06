@@ -65,6 +65,12 @@ main {
     flex-direction: column;
     overflow-y: scroll;
     scroll-behavior: smooth;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.conversation-messages-wrapper::-webkit-scrollbar {
+    display: none;
 }
 
 .conversation-messages-wrapper > .chat-wrapper:first-of-type {
@@ -79,4 +85,61 @@ main {
 
 .conversation-processing-status {
     color: var(--text-color-50-opacity);
+}
+
+.conversation-thinking-notepad {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 300px;
+    max-height: 200px;
+    background-color: var(--background-color-chat-human);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.conversation-thinking-notepad::-webkit-scrollbar {
+    display: none;
+}
+
+.conversation-thinking-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-color-85-opacity);
+}
+
+.conversation-thinking-content {
+    font-size: 0.8rem;
+    line-height: 1.3;
+    color: var(--text-color-chat-human);
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.conversation-thinking-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: var(--background-color-action-85-opacity);
+    margin-right: 8px;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%,
+    100% {
+        opacity: 0.4;
+    }
+    50% {
+        opacity: 1;
+    }
 }

@@ -13,6 +13,8 @@ interface StreamingState {
   processingStatus: string;
   mapLayers: string[];
   mapFocusedMunicipality: number | null;
+  thinkingContent: string;
+  isThinking: boolean;
 }
 
 interface StreamingActions {
@@ -29,25 +31,34 @@ export const useStreamingChat = (
   const [mapFocusedMunicipality, setMapFocusedMunicipality] = useState<
     number | null
   >(null);
+  const [thinkingContent, setThinkingContent] = useState<string>("");
+  const [isThinking, setIsThinking] = useState<boolean>(false);
 
   const eventSourceRef = useRef<EventSource | null>(null);
 
+  // word-by-word animation refs
   const tokenBufferRef = useRef<string>("");
   const displayedContentRef = useRef<string>("");
   const animationFrameRef = useRef<number | null>(null);
   const typewriterFrameRef = useRef<number | null>(null);
   const isFirstTokenRef = useRef<boolean>(true);
 
+  // thinking state tracking
+  const thinkingBufferRef = useRef<string>("");
+  const responseBufferRef = useRef<string>("");
+  const hasSeenThinkingEndRef = useRef<boolean>(false);
+
+  // word animation state
   const displayedWordsRef = useRef<number>(0);
   const targetWordsRef = useRef<string[]>([]);
 
-  // typewriter speed in wps
+  // animation settings
+  // words per second
   const typewriterSpeedRef = useRef<number>(8);
   const lastUpdateTimeRef = useRef<number>(0);
 
   // split text into words
   // while preserving spaces
-  // for word-by-word animation
   const splitIntoWords = useCallback((text: string): string[] => {
     if (!text) return [];
 
@@ -58,10 +69,12 @@ export const useStreamingChat = (
 
     for (let i = 0; i < parts.length; i++) {
       if (parts[i].trim() !== "") {
+        // add word with any
+        // following whitespace
         const word = parts[i] + (parts[i + 1] || "");
         words.push(word);
         // skip whitespace part
-        // since already included
+        // since included
         if (parts[i + 1]) i++;
       }
     }
@@ -69,17 +82,58 @@ export const useStreamingChat = (
     return words;
   }, []);
 
+  // parse thinking blocks
+  // and response content
+  const parseContent = useCallback((rawContent: string) => {
+    // check if we have a
+    // complete thinking block
+    const thinkingMatch = rawContent.match(/<think>([\s\S]*?)<\/think>/);
+
+    if (thinkingMatch) {
+      const thinkingText = thinkingMatch[1].trim();
+      const responseText = rawContent
+        .replace(/<think>[\s\S]*?<\/think>/, "")
+        .trim();
+      return {
+        thinking: thinkingText,
+        response: responseText,
+        hasCompleteThinking: true,
+      };
+    }
+
+    // check if we are in the
+    // middle of a thinking block
+    const thinkingStartMatch = rawContent.match(/<think>([\s\S]*)$/);
+    if (thinkingStartMatch) {
+      return {
+        thinking: thinkingStartMatch[1],
+        response: "",
+        hasCompleteThinking: false,
+      };
+    }
+
+    // no thinking tags
+    // treat as response
+    return {
+      thinking: "",
+      response: rawContent,
+      hasCompleteThinking: true,
+    };
+  }, []);
+
   const animateTypewriter = useCallback((timestamp: number) => {
     const targetWords = targetWordsRef.current;
     const currentWordCount = displayedWordsRef.current;
 
     if (currentWordCount < targetWords.length) {
-      // elapsed time since last update
+      // elapsed time since
+      // last animated frame
       const deltaTime = timestamp - lastUpdateTimeRef.current;
       const wordsToAdd = Math.max(
         1,
         Math.floor((typewriterSpeedRef.current * deltaTime) / 1000),
       );
+
       // update displayed word count
       const newWordCount = Math.min(
         currentWordCount + wordsToAdd,
@@ -87,11 +141,12 @@ export const useStreamingChat = (
       );
       displayedWordsRef.current = newWordCount;
       lastUpdateTimeRef.current = timestamp;
+
       // reconstruct text from words
       const newContent = targetWords.slice(0, newWordCount).join("");
       displayedContentRef.current = newContent;
 
-      // update messages
+      // update react state
       setMessages((msgs) => {
         if (msgs[msgs.length - 1]?.role === "assistant") {
           return [
@@ -102,9 +157,9 @@ export const useStreamingChat = (
           return [...msgs, { role: "assistant", content: newContent }];
         }
       });
-      // continue animation if new words
-      // buffered instead of requesting
-      // new animation from the browser
+
+      // continue animation if
+      // more words to show
       if (newWordCount < targetWords.length) {
         typewriterFrameRef.current = requestAnimationFrame(animateTypewriter);
       } else {
@@ -116,7 +171,7 @@ export const useStreamingChat = (
   }, []);
 
   const startTypewriterAnimation = useCallback(() => {
-    const newWords = splitIntoWords(tokenBufferRef.current);
+    const newWords = splitIntoWords(responseBufferRef.current);
     const currentWords = targetWordsRef.current;
 
     // only start animation
@@ -125,8 +180,6 @@ export const useStreamingChat = (
       targetWordsRef.current = newWords;
 
       if (typewriterFrameRef.current === null) {
-        // update request time
-        // to correctly cap wps
         lastUpdateTimeRef.current = performance.now();
         typewriterFrameRef.current = requestAnimationFrame(animateTypewriter);
       }
@@ -134,9 +187,43 @@ export const useStreamingChat = (
   }, [animateTypewriter, splitIntoWords]);
 
   const flushTokenBuffer = useCallback(() => {
-    startTypewriterAnimation();
+    const { thinking, response, hasCompleteThinking } = parseContent(
+      tokenBufferRef.current,
+    );
+
+    if (thinking && thinking !== thinkingBufferRef.current) {
+      // update thinking content
+      // if we have thinking text
+      thinkingBufferRef.current = thinking;
+      setThinkingContent(thinking);
+
+      if (!isThinking) {
+        setIsThinking(true);
+        setProcessingStatus("Thinking..");
+      }
+    }
+
+    // if thinking block is complete
+    // and we have response content
+    if (hasCompleteThinking && response && !hasSeenThinkingEndRef.current) {
+      hasSeenThinkingEndRef.current = true;
+      setIsThinking(false);
+      setProcessingStatus("");
+    }
+
+    // update response content if we
+    // are past thinking mode or if
+    // there is no thinking block
+    if (
+      (hasSeenThinkingEndRef.current || !thinking) &&
+      response !== responseBufferRef.current
+    ) {
+      responseBufferRef.current = response;
+      startTypewriterAnimation();
+    }
+
     animationFrameRef.current = null;
-  }, [startTypewriterAnimation]);
+  }, [parseContent, startTypewriterAnimation, isThinking]);
 
   const scheduleTokenUpdate = useCallback(() => {
     if (animationFrameRef.current === null) {
@@ -148,15 +235,23 @@ export const useStreamingChat = (
     async (prompt: string) => {
       setMessages((msgs) => [...msgs, { role: "user", content: prompt }]);
 
-      // reset animation state
+      // reset all state for new prompt
       tokenBufferRef.current = "";
       displayedContentRef.current = "";
       displayedWordsRef.current = 0;
       targetWordsRef.current = [];
       isFirstTokenRef.current = true;
       lastUpdateTimeRef.current = 0;
+      thinkingBufferRef.current = "";
+      responseBufferRef.current = "";
+      hasSeenThinkingEndRef.current = false;
 
-      // cancel pending animations
+      // reset ui state
+      setThinkingContent("");
+      setIsThinking(false);
+      setProcessingStatus("");
+
+      // cancel all pending animations
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
         animationFrameRef.current = null;
@@ -166,6 +261,7 @@ export const useStreamingChat = (
         typewriterFrameRef.current = null;
       }
 
+      // send prompt to backend
       const response = await fetch("/api/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -190,19 +286,22 @@ export const useStreamingChat = (
       // handle incoming tokens
       es.addEventListener("token", (e) => {
         if (isFirstTokenRef.current) {
-          setProcessingStatus("");
           isFirstTokenRef.current = false;
         }
-        // push tokens to buffer
+        // accumulate tokens in buffer
         tokenBufferRef.current += e.data;
-        // schedule animation update
+        // schedule parsing and animation update
         scheduleTokenUpdate();
       });
 
       // handle status updates
       es.addEventListener("info", (e) => {
         const data = JSON.parse(e.data);
-        setProcessingStatus(data.content);
+        // only update status if
+        // not in thinking mode
+        if (!isThinking) {
+          setProcessingStatus(data.content);
+        }
       });
 
       // handle focused geometry update
@@ -224,29 +323,34 @@ export const useStreamingChat = (
           cancelAnimationFrame(animationFrameRef.current);
           animationFrameRef.current = null;
         }
-        // complete any animation
+
+        // complete animation
+        // when stream ends
         if (typewriterFrameRef.current) {
           cancelAnimationFrame(typewriterFrameRef.current);
           typewriterFrameRef.current = null;
         }
 
-        displayedContentRef.current = tokenBufferRef.current;
-        displayedWordsRef.current = splitIntoWords(
-          tokenBufferRef.current,
-        ).length;
-        targetWordsRef.current = splitIntoWords(tokenBufferRef.current);
+        // final parse and display
+        const { response } = parseContent(tokenBufferRef.current);
+        displayedContentRef.current = response;
+        responseBufferRef.current = response;
+        displayedWordsRef.current = splitIntoWords(response).length;
+        targetWordsRef.current = splitIntoWords(response);
+
+        // clear thinking state
+        setIsThinking(false);
+        setThinkingContent("");
+        setProcessingStatus("");
 
         setMessages((msgs) => {
           if (msgs[msgs.length - 1]?.role === "assistant") {
             return [
               ...msgs.slice(0, -1),
-              { role: "assistant", content: tokenBufferRef.current },
+              { role: "assistant", content: response },
             ];
           } else {
-            return [
-              ...msgs,
-              { role: "assistant", content: tokenBufferRef.current },
-            ];
+            return [...msgs, { role: "assistant", content: response }];
           }
         });
 
@@ -256,7 +360,7 @@ export const useStreamingChat = (
 
       eventSourceRef.current = es;
     },
-    [options, scheduleTokenUpdate, splitIntoWords],
+    [options, scheduleTokenUpdate, splitIntoWords, parseContent, isThinking],
   );
 
   return [
@@ -266,7 +370,11 @@ export const useStreamingChat = (
       processingStatus,
       mapLayers,
       mapFocusedMunicipality,
+      thinkingContent,
+      isThinking,
     },
-    { sendPrompt },
+    {
+      sendPrompt,
+    },
   ];
 };

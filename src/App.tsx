@@ -38,6 +38,8 @@ function App() {
         isStreaming={streamingState.isStreaming}
         processingStatus={streamingState.processingStatus}
         toolCalls={toolCalls}
+        thinkingContent={streamingState.thinkingContent}
+        isThinking={streamingState.isThinking}
       />
     </Layout>
   );

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Prompt from "../../ui/Prompt";
 import { useTranslation } from "react-i18next";
 import type { Message } from "../../../types/Message";
@@ -12,6 +12,8 @@ interface ConversationProps {
   isStreaming: boolean;
   processingStatus: string;
   toolCalls: string[];
+  thinkingContent?: string;
+  isThinking?: boolean;
 }
 
 const Conversation = ({
@@ -19,14 +21,51 @@ const Conversation = ({
   onSendPrompt,
   isStreaming,
   processingStatus,
+  thinkingContent = "",
+  isThinking = false,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   toolCalls: _toolCalls,
 }: ConversationProps) => {
   const [promptInput, setPromptInput] = useState<string>("");
   const { t } = useTranslation();
 
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesWrapperRef = useRef<HTMLDivElement>(null);
+
+  // scroll to bottom whenever
+  // a message's content changes
+  // or the processing status changes
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "end",
+      });
+    }
+  }, [processingStatus, messages]);
+
+  // scroll during streaming
+  useEffect(() => {
+    if (isStreaming && messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "end",
+      });
+    }
+  }, [isStreaming]);
+
   return (
     <main>
+      {isThinking && thinkingContent && (
+        <div className="conversation-thinking-notepad">
+          <div className="conversation-thinking-header">
+            <div className="conversation-thinking-indicator"></div>
+            thinking...
+          </div>
+          <div className="conversation-thinking-content">{thinkingContent}</div>
+        </div>
+      )}
+
       {messages.length === 0 && (
         <div
           className={"conversation-fallback-wrapper"}
@@ -60,7 +99,7 @@ const Conversation = ({
         </div>
       )}
       {messages.length > 0 && (
-        <div className="conversation-messages-wrapper">
+        <div ref={messagesWrapperRef} className="conversation-messages-wrapper">
           {messages.map((msg, index) => (
             <Chat
               key={index}
@@ -82,6 +121,7 @@ const Conversation = ({
               </div>
             </div>
           )}
+          <div ref={messagesEndRef} />
         </div>
       )}
       <Prompt

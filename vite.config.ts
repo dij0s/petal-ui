@@ -11,7 +11,7 @@ export default defineConfig({
         families: [
           {
             name: "Funnel Display",
-            styles: "wght@400",
+            styles: "wght@400;600",
           },
         ],
       },
