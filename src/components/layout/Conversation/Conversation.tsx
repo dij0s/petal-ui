@@ -62,7 +62,11 @@ const Conversation = ({
       {messages.length > 0 && (
         <div className="conversation-messages-wrapper">
           {messages.map((msg, index) => (
-            <Chat key={index} message={msg} />
+            <Chat
+              key={index}
+              message={msg}
+              isStreaming={isStreaming && index === messages.length - 1}
+            />
           ))}
           {processingStatus !== "" && (
             <div className="conversation-status">

@@ -12,6 +12,16 @@
 
 .chat {
     font-size: 1rem;
+    animation: fadeIn 0.2s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0.6;
+    }
+    to {
+        opacity: 1;
+    }
 }
 
 .chat-wrapper[data-source="user"] > .chat {
@@ -29,4 +39,25 @@
 .chat-wrapper[data-source="assistant"] > .chat {
     color: var(--text-color);
     white-space: pre-line;
+}
+
+.typewriter-cursor {
+    display: inline-block;
+    background-color: var(--background-color-action-85-opacity);
+    width: 8px;
+    height: 1.2em;
+    margin-left: 3px;
+    vertical-align: text-top;
+    animation: blink 1s infinite;
+}
+
+@keyframes blink {
+    0%,
+    50% {
+        opacity: 1;
+    }
+    51%,
+    100% {
+        opacity: 0;
+    }
 }
