@@ -36,32 +36,30 @@ export const useStreamingChat = (
 
   const eventSourceRef = useRef<EventSource | null>(null);
 
-  // word-by-word animation refs
   const tokenBufferRef = useRef<string>("");
   const displayedContentRef = useRef<string>("");
   const animationFrameRef = useRef<number | null>(null);
   const typewriterFrameRef = useRef<number | null>(null);
   const isFirstTokenRef = useRef<boolean>(true);
 
-  // thinking state tracking
   const thinkingBufferRef = useRef<string>("");
   const responseBufferRef = useRef<string>("");
   const hasSeenThinkingEndRef = useRef<boolean>(false);
 
-  // word animation state
+  const pendingLayersRef = useRef<string[]>([]);
+  const pendingMunicipalityRef = useRef<number | null>(null);
+  const layersAppliedRef = useRef<boolean>(false);
+
   const displayedWordsRef = useRef<number>(0);
   const targetWordsRef = useRef<string[]>([]);
-
   // animation settings
   // words per second
   const typewriterSpeedRef = useRef<number>(8);
   const lastUpdateTimeRef = useRef<number>(0);
-
   // split text into words
   // while preserving spaces
   const splitIntoWords = useCallback((text: string): string[] => {
     if (!text) return [];
-
     // split by spaces but keep
     // spaces with preceding words
     const words: string[] = [];
@@ -186,6 +184,14 @@ export const useStreamingChat = (
     }
   }, [animateTypewriter, splitIntoWords]);
 
+  const applyPendingLayers = useCallback(() => {
+    if (!layersAppliedRef.current && pendingLayersRef.current.length > 0) {
+      setMapLayers(pendingLayersRef.current);
+      setMapFocusedMunicipality(pendingMunicipalityRef.current);
+      layersAppliedRef.current = true;
+    }
+  }, []);
+
   const flushTokenBuffer = useCallback(() => {
     const { thinking, response, hasCompleteThinking } = parseContent(
       tokenBufferRef.current,
@@ -202,15 +208,15 @@ export const useStreamingChat = (
         setProcessingStatus("Thinking..");
       }
     }
-
     // if thinking block is complete
     // and we have response content
     if (hasCompleteThinking && response && !hasSeenThinkingEndRef.current) {
       hasSeenThinkingEndRef.current = true;
       setIsThinking(false);
       setProcessingStatus("");
+      // apply layers when actual response starts
+      applyPendingLayers();
     }
-
     // update response content if we
     // are past thinking mode or if
     // there is no thinking block
@@ -219,11 +225,16 @@ export const useStreamingChat = (
       response !== responseBufferRef.current
     ) {
       responseBufferRef.current = response;
+      // also apply layers when response content starts
+      // (for cases without thinking blocks)
+      if (!thinking) {
+        applyPendingLayers();
+      }
+
       startTypewriterAnimation();
     }
-
     animationFrameRef.current = null;
-  }, [parseContent, startTypewriterAnimation, isThinking]);
+  }, [parseContent, startTypewriterAnimation, isThinking, applyPendingLayers]);
 
   const scheduleTokenUpdate = useCallback(() => {
     if (animationFrameRef.current === null) {
@@ -234,7 +245,6 @@ export const useStreamingChat = (
   const sendPrompt = useCallback(
     async (prompt: string) => {
       setMessages((msgs) => [...msgs, { role: "user", content: prompt }]);
-
       // reset all state for new prompt
       tokenBufferRef.current = "";
       displayedContentRef.current = "";
@@ -245,13 +255,15 @@ export const useStreamingChat = (
       thinkingBufferRef.current = "";
       responseBufferRef.current = "";
       hasSeenThinkingEndRef.current = false;
+      pendingLayersRef.current = [];
+      pendingMunicipalityRef.current = null;
+      layersAppliedRef.current = false;
 
-      // reset ui state
       setThinkingContent("");
       setIsThinking(false);
       setProcessingStatus("");
 
-      // cancel all pending animations
+      // cancel pending animations
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
         animationFrameRef.current = null;
@@ -261,7 +273,6 @@ export const useStreamingChat = (
         typewriterFrameRef.current = null;
       }
 
-      // send prompt to backend
       const response = await fetch("/api/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -290,7 +301,7 @@ export const useStreamingChat = (
         }
         // accumulate tokens in buffer
         tokenBufferRef.current += e.data;
-        // schedule parsing and animation update
+        // schedule animation update
         scheduleTokenUpdate();
       });
 
@@ -307,13 +318,17 @@ export const useStreamingChat = (
       // handle focused geometry update
       es.addEventListener("sfso_number", (e) => {
         const data = JSON.parse(e.data);
-        setMapFocusedMunicipality(Number(data.sfso_number));
+        // always buffer municipality
+        // until response starts
+        pendingMunicipalityRef.current = Number(data.sfso_number);
       });
 
       // handle layers update
       es.addEventListener("layers", (e) => {
         const data = JSON.parse(e.data);
-        setMapLayers(data.layers);
+        // always buffer layers
+        // until response starts
+        pendingLayersRef.current = data.layers;
       });
 
       // handle end event
@@ -330,6 +345,10 @@ export const useStreamingChat = (
           cancelAnimationFrame(typewriterFrameRef.current);
           typewriterFrameRef.current = null;
         }
+
+        // apply any remaining
+        // pending layers
+        applyPendingLayers();
 
         // final parse and display
         const { response } = parseContent(tokenBufferRef.current);
@@ -360,7 +379,14 @@ export const useStreamingChat = (
 
       eventSourceRef.current = es;
     },
-    [options, scheduleTokenUpdate, splitIntoWords, parseContent, isThinking],
+    [
+      options,
+      scheduleTokenUpdate,
+      splitIntoWords,
+      parseContent,
+      isThinking,
+      applyPendingLayers,
+    ],
   );
 
   return [
