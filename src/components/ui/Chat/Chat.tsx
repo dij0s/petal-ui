@@ -1,5 +1,6 @@
 import type { Message } from "../../../types/Message";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import "./Chat.css";
 
 interface ChatProps {
@@ -14,6 +15,7 @@ const Chat = ({ message, isStreaming = false }: ChatProps) => {
         {message.role === "assistant" ? (
           <div className="chat-markdown-content">
             <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
               components={{
                 h3: ({ children }) => (
                   <h3 className="chat-markdown-h3">{children}</h3>
@@ -41,6 +43,26 @@ const Chat = ({ message, isStreaming = false }: ChatProps) => {
                 ),
                 hr: ({ children }) => (
                   <hr className="chat-markdown-hr">{children}</hr>
+                ),
+                table: ({ children }) => (
+                  <div className="chat-markdown-table-wrapper">
+                    <table className="chat-markdown-table">{children}</table>
+                  </div>
+                ),
+                thead: ({ children }) => (
+                  <thead className="chat-markdown-thead">{children}</thead>
+                ),
+                tbody: ({ children }) => (
+                  <tbody className="chat-markdown-tbody">{children}</tbody>
+                ),
+                tr: ({ children }) => (
+                  <tr className="chat-markdown-tr">{children}</tr>
+                ),
+                th: ({ children }) => (
+                  <th className="chat-markdown-th">{children}</th>
+                ),
+                td: ({ children }) => (
+                  <td className="chat-markdown-td">{children}</td>
                 ),
               }}
             >

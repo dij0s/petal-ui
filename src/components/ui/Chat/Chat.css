@@ -96,7 +96,25 @@
     margin: 20px 4px;
 }
 
-.chat- .typewriter-cursor {
+.chat-markdown-table-wrapper {
+    display: flex;
+    justify-content: center;
+}
+
+.chat-markdown-table {
+    width: 95%;
+    border-collapse: collapse;
+}
+
+.chat-markdown-thead {
+    border-bottom: 1px solid var(--border-color-table-head);
+}
+
+.chat-markdown-tr:not(:last-child) {
+    border-bottom: 1px solid var(--border-color);
+}
+
+.chat .typewriter-cursor {
     display: inline-block;
     background-color: var(--background-color-action-85-opacity);
     width: 8px;
