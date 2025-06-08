@@ -31,28 +31,71 @@ const Conversation = ({
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesWrapperRef = useRef<HTMLDivElement>(null);
+  const autoScrollEnabledRef = useRef<boolean>(true);
+  const lastScrollTopRef = useRef<number>(0);
 
-  // scroll to bottom whenever
-  // a message's content changes
-  // or the processing status changes
-  useEffect(() => {
-    if (messagesEndRef.current) {
+  // check if user is near
+  // the bottom of scroll
+  const isNearBottom = () => {
+    const wrapper = messagesWrapperRef.current;
+    if (!wrapper) return true;
+    // in px
+    const threshold = 50;
+    const { scrollTop, scrollHeight, clientHeight } = wrapper;
+    return scrollHeight - scrollTop - clientHeight < threshold;
+  };
+
+  const scrollToBottom = () => {
+    if (autoScrollEnabledRef.current && messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({
         behavior: "smooth",
-        block: "end",
+        block: "start",
       });
     }
-  }, [processingStatus, messages]);
+  };
+
+  const handleScroll = () => {
+    const wrapper = messagesWrapperRef.current;
+    if (!wrapper) return;
+
+    const currentScrollTop = wrapper.scrollTop;
+
+    // user scrolled up manually
+    // disable auto scroll
+    if (currentScrollTop < lastScrollTopRef.current && !isNearBottom()) {
+      autoScrollEnabledRef.current = false;
+    }
+    // user scrolled back to bottom is
+    // snapped back into the ongoing scroll
+    else if (isNearBottom()) {
+      autoScrollEnabledRef.current = true;
+    }
+
+    lastScrollTopRef.current = currentScrollTop;
+  };
+
+  // scroll to bottom when messages
+  // change or processing status changes
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, processingStatus]);
 
   // scroll during streaming
   useEffect(() => {
-    if (isStreaming && messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({
-        behavior: "smooth",
-        block: "end",
-      });
+    if (isStreaming) {
+      scrollToBottom();
     }
   }, [isStreaming]);
+
+  // (re)-enable auto scroll
+  // on new prompt from user
+  const handleSendPrompt = (prompt: string) => {
+    if (prompt.trim() !== "") {
+      autoScrollEnabledRef.current = true;
+      onSendPrompt(prompt);
+      setPromptInput("");
+    }
+  };
 
   return (
     <main>
@@ -99,13 +142,13 @@ const Conversation = ({
         </div>
       )}
       {messages.length > 0 && (
-        <div ref={messagesWrapperRef} className="conversation-messages-wrapper">
+        <div
+          ref={messagesWrapperRef}
+          className="conversation-messages-wrapper"
+          onScroll={handleScroll}
+        >
           {messages.map((msg, index) => (
-            <Chat
-              key={index}
-              message={msg}
-              isStreaming={isStreaming && index === messages.length - 1}
-            />
+            <Chat key={index} message={msg} />
           ))}
           {processingStatus !== "" && (
             <div className="conversation-status">
@@ -127,12 +170,7 @@ const Conversation = ({
       <Prompt
         promptInput={promptInput}
         setPromptInput={setPromptInput}
-        onSend={(prompt) => {
-          if (prompt.trim() != "") {
-            onSendPrompt(prompt);
-            setPromptInput("");
-          }
-        }}
+        onSend={handleSendPrompt}
         disabled={isStreaming}
       />
     </main>

@@ -5,10 +5,9 @@ import "./Chat.css";
 
 interface ChatProps {
   message: Message;
-  isStreaming?: boolean;
 }
 
-const Chat = ({ message, isStreaming = false }: ChatProps) => {
+const Chat = ({ message }: ChatProps) => {
   return (
     <div className="chat-wrapper" data-source={message.role}>
       <div className="chat">
@@ -31,6 +30,9 @@ const Chat = ({ message, isStreaming = false }: ChatProps) => {
                 ),
                 em: ({ children }) => (
                   <em className="chat-markdown-em">{children}</em>
+                ),
+                blockquote: ({ children }) => (
+                  <strong className="chat-markdown-strong">{children}</strong>
                 ),
                 ul: ({ children }) => (
                   <ul className="chat-markdown-ul">{children}</ul>
@@ -68,7 +70,6 @@ const Chat = ({ message, isStreaming = false }: ChatProps) => {
             >
               {message.content}
             </ReactMarkdown>
-            {isStreaming && <span className="typewriter-cursor"></span>}
           </div>
         ) : (
           message.content

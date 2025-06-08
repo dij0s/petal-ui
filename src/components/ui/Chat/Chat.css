@@ -7,7 +7,7 @@
 
 .chat-wrapper[data-source="assistant"] {
     line-height: 1.25rem;
-    padding-bottom: 20px;
+    padding-bottom: 55px;
 }
 
 .chat {
@@ -99,6 +99,7 @@
 .chat-markdown-table-wrapper {
     display: flex;
     justify-content: center;
+    margin: 20px 0px;
 }
 
 .chat-markdown-table {
@@ -112,25 +113,4 @@
 
 .chat-markdown-tr:not(:last-child) {
     border-bottom: 1px solid var(--border-color);
-}
-
-.chat .typewriter-cursor {
-    display: inline-block;
-    background-color: var(--background-color-action-85-opacity);
-    width: 8px;
-    height: 1.2rem;
-    margin-left: 2px;
-    vertical-align: text-top;
-    animation: blink 1s infinite;
-}
-
-@keyframes blink {
-    0%,
-    50% {
-        opacity: 1;
-    }
-    51%,
-    100% {
-        opacity: 0;
-    }
 }
