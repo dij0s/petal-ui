@@ -17,4 +17,25 @@ export default defineConfig({
       },
     }),
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          "react-vendor": [
+            "react",
+            "react-dom",
+            "react-i18next",
+            "react-markdown",
+          ],
+          mapping: ["ol", "proj4"],
+          vendors: [
+            "i18next",
+            "remark-gfm",
+            "@fortawesome/react-fontawesome",
+            "@fortawesome/free-solid-svg-icons",
+          ],
+        },
+      },
+    },
+  },
 });

@@ -79,7 +79,6 @@ const Conversation = ({
   useEffect(() => {
     scrollToBottom();
   }, [messages, processingStatus]);
-
   // scroll during streaming
   useEffect(() => {
     if (isStreaming) {
@@ -99,16 +98,6 @@ const Conversation = ({
 
   return (
     <main>
-      {isThinking && thinkingContent && (
-        <div className="conversation-thinking-notepad">
-          <div className="conversation-thinking-header">
-            <div className="conversation-thinking-indicator"></div>
-            thinking...
-          </div>
-          <div className="conversation-thinking-content">{thinkingContent}</div>
-        </div>
-      )}
-
       {messages.length === 0 && (
         <div
           className={"conversation-fallback-wrapper"}
@@ -162,6 +151,11 @@ const Conversation = ({
               <div className="conversation-processing-status">
                 {processingStatus}
               </div>
+            </div>
+          )}
+          {isThinking && (
+            <div className="conversation-thinking-wrapper">
+              {thinkingContent}
             </div>
           )}
           <div ref={messagesEndRef} />
