@@ -35,8 +35,6 @@
     word-break: break-word;
     overflow-wrap: break-word;
     white-space: pre-line;
-    text-wrap: balance;
-    hyphens: auto;
 }
 
 .chat-wrapper[data-source="assistant"] > .chat {
