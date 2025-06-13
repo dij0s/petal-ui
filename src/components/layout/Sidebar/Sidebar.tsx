@@ -1,16 +1,86 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTableColumns, faPlus } from "@fortawesome/free-solid-svg-icons";
 import { useTranslation } from "react-i18next";
+import { useConversations } from "../../../utils/useConversation";
+import type { Checkpoint } from "../../../types/Checkpoint";
 import "./Sidebar.css";
 
 interface SidebarProps {
   sidebarState: "collapsed" | "expanded";
   setSidebarState: (state: "collapsed" | "expanded") => void;
+  onClickConversation?: (threadId: string) => void;
 }
 
-const Sidebar = ({ sidebarState, setSidebarState }: SidebarProps) => {
+interface GroupedConversations {
+  today: Checkpoint[];
+  lastWeek: Checkpoint[];
+  older: Checkpoint[];
+}
+
+const Sidebar = ({
+  sidebarState,
+  setSidebarState,
+  onClickConversation,
+}: SidebarProps) => {
   const { t } = useTranslation();
+  const { conversations, loading, error } = useConversations();
   const isCollapsed = sidebarState === "collapsed";
+
+  // bin conversations
+  // into time periods
+  const groupConversationsByTime = (
+    conversations: Checkpoint[],
+  ): GroupedConversations => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const lastWeek = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+    return conversations.reduce(
+      (groups, conversation) => {
+        const conversationDate = new Date(conversation.timestamp);
+
+        if (conversationDate >= today) {
+          groups.today.push(conversation);
+        } else if (conversationDate >= lastWeek) {
+          groups.lastWeek.push(conversation);
+        } else {
+          groups.older.push(conversation);
+        }
+
+        return groups;
+      },
+      { today: [], lastWeek: [], older: [] } as GroupedConversations,
+    );
+  };
+  const groupedConversations = groupConversationsByTime(conversations);
+
+  const ConversationGroup = ({
+    title,
+    conversations,
+  }: {
+    title: string;
+    conversations: Checkpoint[];
+  }) => {
+    if (conversations.length === 0) return null;
+
+    return (
+      <div className="panel-history-bin">
+        <div className="panel-history-bin-title">{title}</div>
+        <div className="panel-history-bin-items">
+          {conversations.map((conversation) => (
+            <div
+              key={conversation.threadId}
+              className="panel-history-item"
+              onClick={() => onClickConversation?.(conversation.threadId)}
+              title={conversation.title}
+            >
+              {conversation.title}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
 
   // expand panel container
   const expandPanel = (
@@ -50,7 +120,32 @@ const Sidebar = ({ sidebarState, setSidebarState }: SidebarProps) => {
         {expandPanel}
         {newConversation}
       </div>
-      {!isCollapsed && <div className="panel-history-wrapper"></div>}
+      {!isCollapsed && (
+        <div className="panel-history-wrapper">
+          {!loading &&
+            !error &&
+            (conversations.length === 0 ? (
+              <div className="panel-history-empty">
+                No conversations yet. Start a new conversation to see it here!
+              </div>
+            ) : (
+              <>
+                <ConversationGroup
+                  title={t("side_panel_today_label")}
+                  conversations={groupedConversations.today}
+                />
+                <ConversationGroup
+                  title={t("side_panel_last_week_label")}
+                  conversations={groupedConversations.lastWeek}
+                />
+                <ConversationGroup
+                  title={t("side_panel_older_label")}
+                  conversations={groupedConversations.older}
+                />
+              </>
+            ))}
+        </div>
+      )}
     </aside>
   );
 };

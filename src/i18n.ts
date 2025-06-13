@@ -26,6 +26,9 @@ i18n.use(initReactI18next).init({
       translation: {
         side_panel_close_label: "Close",
         side_panel_new_conversation_label: "New conversation",
+        side_panel_today_label: "Today",
+        side_panel_last_week_label: "Last week",
+        side_panel_older_label: "Previous",
         welcome_message: "Hey, what can I help with ?",
         prompt_propositions: [
           "Analyze the energy consumption trends of the past 5 years.",
@@ -43,6 +46,9 @@ i18n.use(initReactI18next).init({
       translation: {
         side_panel_close_label: "Fermer",
         side_panel_new_conversation_label: "Nouvelle conversation",
+        side_panel_today_label: "Aujourd'hui",
+        side_panel_last_week_label: "La semaine dernière",
+        side_panel_older_label: "Précédent",
         prompt_placeholder: "Tapez votre message ici...",
         welcome_message: "Comment puis-je vous aider ?",
         prompt_propositions: [
@@ -60,6 +66,9 @@ i18n.use(initReactI18next).init({
       translation: {
         side_panel_close_label: "Schließen",
         side_panel_new_conversation_label: "Neues Gespräch",
+        side_panel_today_label: "Heute",
+        side_panel_last_week_label: "Letzte Woche",
+        side_panel_older_label: "Früher",
         prompt_placeholder: "Geben Sie hier Ihre Nachricht ein...",
         welcome_message: "Hallo, womit kann ich helfen?",
         prompt_propositions: [

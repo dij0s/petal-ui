@@ -1,4 +1,6 @@
 import { useState, useRef, useCallback } from "react";
+import { checkpointStorage } from "./checkpointStorage";
+import { conversationEvents } from "./conversationEvents";
 import type { Message } from "../types/Message";
 
 interface UseStreamingChatOptions {
@@ -56,6 +58,8 @@ export const useStreamingChat = (
   // words per second
   const typewriterSpeedRef = useRef<number>(8);
   const lastUpdateTimeRef = useRef<number>(0);
+
+  const pendingCheckpointRef = useRef<any>(null);
   // split text into words
   // while preserving spaces
   const splitIntoWords = useCallback((text: string): string[] => {
@@ -118,6 +122,25 @@ export const useStreamingChat = (
       hasCompleteThinking: true,
     };
   }, []);
+
+  const extractTitle = (responseContent: string) => {
+    if (!responseContent || responseContent.trim() === "") {
+      return "New Conversation";
+    }
+
+    // extract first line or
+    // first sentence as title
+    const firstLine = responseContent.trim().split("\n")[0];
+    const firstSentence = firstLine.split(".")[0];
+
+    // clean up any markdown or special characters for title
+    const cleanTitle = firstSentence
+      .replace(/[#*_`]/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    return cleanTitle || "New Conversation";
+  };
 
   const animateTypewriter = useCallback((timestamp: number) => {
     const targetWords = targetWordsRef.current;
@@ -257,6 +280,7 @@ export const useStreamingChat = (
       hasSeenThinkingEndRef.current = false;
       pendingLayersRef.current = [];
       pendingMunicipalityRef.current = null;
+      pendingCheckpointRef.current = null;
       layersAppliedRef.current = false;
 
       setThinkingContent("");
@@ -305,6 +329,18 @@ export const useStreamingChat = (
         scheduleTokenUpdate();
       });
 
+      es.addEventListener("checkpoint", async (e) => {
+        try {
+          // store checkpoint data
+          // but defer its storage
+          // until end of stream
+          const checkpointData = JSON.parse(e.data);
+          pendingCheckpointRef.current = checkpointData;
+        } catch (error) {
+          console.error("Failed to parse checkpoint data:", error);
+        }
+      });
+
       // handle status updates
       es.addEventListener("info", (e) => {
         const data = JSON.parse(e.data);
@@ -332,7 +368,7 @@ export const useStreamingChat = (
       });
 
       // handle end event
-      es.addEventListener("end", () => {
+      es.addEventListener("end", async () => {
         // cancel batching frame
         if (animationFrameRef.current) {
           cancelAnimationFrame(animationFrameRef.current);
@@ -372,6 +408,26 @@ export const useStreamingChat = (
             return [...msgs, { role: "assistant", content: response }];
           }
         });
+
+        // store conversation checkpoint
+        if (pendingCheckpointRef.current) {
+          try {
+            const title = extractTitle(response);
+            const conversation = checkpointStorage.createCheckpoint(
+              options.threadId,
+              title,
+              pendingCheckpointRef.current,
+            );
+
+            await checkpointStorage.storeCheckpoint(conversation);
+            // clear the pending checkpoint
+            pendingCheckpointRef.current = null;
+            // notify conversations update
+            conversationEvents.emit(conversation);
+          } catch (error) {
+            console.error("Failed to store checkpoint:", error);
+          }
+        }
 
         es.close();
         setIsStreaming(false);
