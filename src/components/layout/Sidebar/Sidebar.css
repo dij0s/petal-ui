@@ -82,3 +82,41 @@ svg,
 .panel-actions-action-conversation-wrapper ~ .panel-actions-label {
     color: var(--background-color-button-prompt);
 }
+
+.panel-history-wrapper {
+    margin: 40px 15px 0;
+    opacity: 0;
+    transition: opacity 0.1s 0.1s;
+}
+
+.layout-wrapper[data-sidebar="expanded"] .panel-history-wrapper {
+    opacity: 1;
+}
+
+.panel-history-bin-title {
+    margin-bottom: 10px;
+    padding-left: 5px;
+    color: var(--text-color-70-opacity);
+    font-size: 0.75rem;
+}
+
+.panel-history-items {
+    display: flex;
+    flex-direction: column;
+}
+
+.panel-history-item {
+    padding: 5px;
+    border-radius: 4px;
+    line-height: 0.875;
+    color: var(--text-color-85-opacity);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: background-color 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.panel-history-item:hover {
+    cursor: pointer;
+    background-color: var(--background-color-side-panel-hover);
+}
