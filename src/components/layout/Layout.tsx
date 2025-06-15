@@ -10,6 +10,9 @@ interface LayoutProps {
   setSidebarState: (state: "collapsed" | "expanded") => void;
   mapLayers: string[];
   focusedMunicipalitySFSO: number | null;
+  onSelectConversation: (threadId: string) => void;
+  onNewConversation: () => void;
+  currentThreadId: string;
 }
 
 const Layout = ({
@@ -18,6 +21,9 @@ const Layout = ({
   setSidebarState,
   mapLayers,
   focusedMunicipalitySFSO,
+  onSelectConversation,
+  onNewConversation,
+  currentThreadId,
 }: LayoutProps) => {
   return (
     <div
@@ -25,7 +31,13 @@ const Layout = ({
       data-sidebar={sidebarState}
       data-map={mapLayers.length === 0 ? "hidden" : "visible"}
     >
-      <Sidebar sidebarState={sidebarState} setSidebarState={setSidebarState} />
+      <Sidebar
+        sidebarState={sidebarState}
+        setSidebarState={setSidebarState}
+        onClickConversation={onSelectConversation}
+        onNewConversation={onNewConversation}
+        currentThreadId={currentThreadId}
+      />
       <div className="main-wrapper">{children}</div>
       {mapLayers.length !== 0 && (
         <Map

@@ -36,7 +36,7 @@ serve({
 
     // proxy API requests to Python backend
     if (url.pathname.startsWith("/api/")) {
-      const apiUrl = BACKEND_API_URL + url.pathname;
+      const apiUrl = BACKEND_API_URL + url.pathname + url.search;
       const bodyText = await req.text();
       const apiReq = new Request(apiUrl, {
         method: req.method,

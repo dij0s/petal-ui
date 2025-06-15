@@ -9,6 +9,8 @@ interface SidebarProps {
   sidebarState: "collapsed" | "expanded";
   setSidebarState: (state: "collapsed" | "expanded") => void;
   onClickConversation?: (threadId: string) => void;
+  onNewConversation?: () => void;
+  currentThreadId?: string;
 }
 
 interface GroupedConversations {
@@ -21,6 +23,8 @@ const Sidebar = ({
   sidebarState,
   setSidebarState,
   onClickConversation,
+  onNewConversation,
+  currentThreadId,
 }: SidebarProps) => {
   const { t } = useTranslation();
   const { conversations, loading, error } = useConversations();
@@ -71,6 +75,9 @@ const Sidebar = ({
             <div
               key={conversation.threadId}
               className="panel-history-item"
+              data-active-conversation={
+                currentThreadId === conversation.threadId
+              }
               onClick={() => onClickConversation?.(conversation.threadId)}
               title={conversation.title}
             >
@@ -106,6 +113,7 @@ const Sidebar = ({
         <FontAwesomeIcon
           icon={faPlus}
           className="panel-actions-action-conversation"
+          onClick={onNewConversation}
         />
       </div>
       <span className="panel-actions-label">
@@ -125,9 +133,7 @@ const Sidebar = ({
           {!loading &&
             !error &&
             (conversations.length === 0 ? (
-              <div className="panel-history-empty">
-                No conversations yet. Start a new conversation to see it here!
-              </div>
+              <div className="panel-history-empty">No conversations yet.</div>
             ) : (
               <>
                 <ConversationGroup

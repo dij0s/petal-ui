@@ -14,16 +14,30 @@ function App() {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [toolCalls, _setToolCalls] = useState<string[]>([]);
 
+  const [currentThreadId, setCurrentThreadId] = useState<string>(() =>
+    crypto.randomUUID(),
+  );
+  const [isInitialConversation, setIsInitialConversation] = useState(true);
+
   const USER_ID = "0";
-  const THREAD_ID = "0";
 
   const { i18n } = useTranslation();
 
   const [streamingState, streamingActions] = useStreamingChat({
     userId: USER_ID,
-    threadId: THREAD_ID,
+    threadId: currentThreadId,
     language: i18n.language,
   });
+
+  const handleSelectConversation = async (threadId: string) => {
+    setCurrentThreadId(threadId);
+    setIsInitialConversation(false);
+  };
+
+  const handleNewConversation = () => {
+    const newThreadId = crypto.randomUUID();
+    setCurrentThreadId(newThreadId);
+  };
 
   return (
     <Layout
@@ -31,6 +45,9 @@ function App() {
       setSidebarState={setSidebarState}
       mapLayers={streamingState.mapLayers}
       focusedMunicipalitySFSO={streamingState.mapFocusedMunicipality}
+      onSelectConversation={handleSelectConversation}
+      onNewConversation={handleNewConversation}
+      currentThreadId={currentThreadId}
     >
       <Conversation
         messages={streamingState.messages}
@@ -40,6 +57,7 @@ function App() {
         toolCalls={toolCalls}
         thinkingContent={streamingState.thinkingContent}
         isThinking={streamingState.isThinking}
+        isInitialConversation={isInitialConversation}
       />
     </Layout>
   );

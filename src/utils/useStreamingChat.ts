@@ -1,12 +1,14 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { checkpointStorage } from "./checkpointStorage";
 import { conversationEvents } from "./conversationEvents";
+import { getConversationType } from "./conversationUtils";
 import type { Message } from "../types/Message";
 
 interface UseStreamingChatOptions {
   userId: string;
   threadId: string;
   language: string;
+  onCheckpointStored?: () => void;
 }
 
 interface StreamingState {
@@ -17,6 +19,7 @@ interface StreamingState {
   mapFocusedMunicipality: number | null;
   thinkingContent: string;
   isThinking: boolean;
+  conversationType: "active" | "checkpointed" | "new";
 }
 
 interface StreamingActions {
@@ -35,6 +38,96 @@ export const useStreamingChat = (
   >(null);
   const [thinkingContent, setThinkingContent] = useState<string>("");
   const [isThinking, setIsThinking] = useState<boolean>(false);
+  const [conversationType, setConversationType] = useState<
+    "active" | "checkpointed" | "new"
+  >("new");
+
+  const conversationCache = useRef<
+    Map<
+      string,
+      {
+        messages: Message[];
+        mapLayers: string[];
+        mapFocusedMunicipality: number | null;
+      }
+    >
+  >(new Map());
+  const previousThreadId = useRef<string | null>(null);
+
+  const saveConversationState = useCallback(
+    (threadId: string) => {
+      conversationCache.current.set(threadId, {
+        messages,
+        mapLayers,
+        mapFocusedMunicipality,
+      });
+    },
+    [messages, mapLayers, mapFocusedMunicipality],
+  );
+
+  // restore conversation
+  // state from cache
+  const restoreConversationState = useCallback((threadId: string) => {
+    const cachedState = conversationCache.current.get(threadId);
+    if (cachedState) {
+      setMessages(cachedState.messages);
+      setMapLayers(cachedState.mapLayers);
+      setMapFocusedMunicipality(cachedState.mapFocusedMunicipality);
+      return true;
+    }
+    return false;
+  }, []);
+
+  // clear conversation state
+  // for checkpointed ones
+  const clearConversationState = useCallback(() => {
+    setMessages([]);
+    setMapLayers([]);
+    setMapFocusedMunicipality(null);
+  }, []);
+
+  const isInitialThread = useRef<boolean>(true);
+  // check conversation type
+  // when threadId changes
+  useEffect(() => {
+    const handleConversationSwitch = async () => {
+      if (isInitialThread.current) {
+        setConversationType("new");
+        isInitialThread.current = false;
+        return;
+      }
+      // save previous conversation
+      // state if it exists
+      if (
+        previousThreadId.current &&
+        previousThreadId.current !== options.threadId
+      ) {
+        saveConversationState(previousThreadId.current);
+      }
+
+      // check the type of
+      // the new conversation
+      const type = await getConversationType(options.userId, options.threadId);
+      setConversationType(type);
+
+      if (type === "active") {
+        const restored = restoreConversationState(options.threadId);
+        if (!restored) {
+          // no cached state but
+          // conversation is active
+          clearConversationState();
+        }
+      } else if (type === "checkpointed") {
+        clearConversationState();
+      } else {
+        clearConversationState();
+      }
+      previousThreadId.current = options.threadId;
+    };
+
+    handleConversationSwitch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [options.threadId, options.userId]);
 
   const eventSourceRef = useRef<EventSource | null>(null);
 
@@ -59,7 +152,7 @@ export const useStreamingChat = (
   const typewriterSpeedRef = useRef<number>(8);
   const lastUpdateTimeRef = useRef<number>(0);
 
-  const pendingCheckpointRef = useRef<any>(null);
+  const pendingCheckpointRef = useRef<unknown>(null);
   // split text into words
   // while preserving spaces
   const splitIntoWords = useCallback((text: string): string[] => {
@@ -267,7 +360,36 @@ export const useStreamingChat = (
 
   const sendPrompt = useCallback(
     async (prompt: string) => {
+      // save conversation state
+      // in current frontend
+      // session only
+      saveConversationState(options.threadId);
       setMessages((msgs) => [...msgs, { role: "user", content: prompt }]);
+
+      const requestBody: Record<string, unknown> = {
+        user_id: options.userId,
+        thread_id: options.threadId,
+        prompt: prompt,
+        lang: options.language,
+      };
+
+      // if this is a checkpointed
+      // conversation we must then
+      // include checkpoint data
+      if (conversationType === "checkpointed") {
+        try {
+          const checkpoint = await checkpointStorage.getCheckpoint(
+            options.threadId,
+          );
+          if (checkpoint) {
+            requestBody.checkpoint_data = checkpoint.data;
+          }
+        } catch (error) {
+          console.error("Failed to load checkpoint for rehydration:", error);
+        }
+      }
+      setConversationType("active");
+
       // reset all state for new prompt
       tokenBufferRef.current = "";
       displayedContentRef.current = "";
@@ -300,12 +422,7 @@ export const useStreamingChat = (
       const response = await fetch("/api/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          user_id: options.userId,
-          thread_id: options.threadId,
-          prompt: prompt,
-          lang: options.language,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (response.status !== 200) {
@@ -428,6 +545,8 @@ export const useStreamingChat = (
             console.error("Failed to store checkpoint:", error);
           }
         }
+        // save current state
+        saveConversationState(options.threadId);
 
         es.close();
         setIsStreaming(false);
@@ -442,6 +561,8 @@ export const useStreamingChat = (
       parseContent,
       isThinking,
       applyPendingLayers,
+      conversationType,
+      saveConversationState,
     ],
   );
 
@@ -454,6 +575,7 @@ export const useStreamingChat = (
       mapFocusedMunicipality,
       thinkingContent,
       isThinking,
+      conversationType,
     },
     {
       sendPrompt,

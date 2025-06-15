@@ -107,16 +107,24 @@ svg,
 
 .panel-history-item {
     padding: 5px;
+    margin-bottom: 2px;
     border-radius: 4px;
     line-height: 0.875;
     color: var(--text-color-85-opacity);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    transition: background-color 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+        background-color 0.1s cubic-bezier(0.4, 0, 0.2, 1),
+        color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.panel-history-item[data-active-conversation="true"] {
+    background-color: var(--background-color-side-panel-hover);
 }
 
 .panel-history-item:hover {
     cursor: pointer;
+    color: var(--text-color);
     background-color: var(--background-color-side-panel-hover);
 }

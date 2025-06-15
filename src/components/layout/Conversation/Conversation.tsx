@@ -14,6 +14,7 @@ interface ConversationProps {
   toolCalls: string[];
   thinkingContent?: string;
   isThinking?: boolean;
+  isInitialConversation?: boolean;
 }
 
 const Conversation = ({
@@ -23,6 +24,7 @@ const Conversation = ({
   processingStatus,
   thinkingContent = "",
   isThinking = false,
+  isInitialConversation = false,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   toolCalls: _toolCalls,
 }: ConversationProps) => {
@@ -101,7 +103,9 @@ const Conversation = ({
       {messages.length === 0 && (
         <div
           className={"conversation-fallback-wrapper"}
-          data-visible={promptInput.trim() === ""}
+          data-visible={
+            promptInput.trim() === "" && isInitialConversation === true
+          }
         >
           <div className="conversation-fallback-welcome">
             {t("welcome_message")}
